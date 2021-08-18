@@ -71,7 +71,7 @@ RUN apk add --no-cache --virtual .build-deps \
       supervisor \
       nginx
 
-RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then apk add --no-cache composer nodejs npm ; fi
+RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then apk add --no-cache git composer nodejs npm ; fi
 
 # Configure php/php-fpm
 COPY conf/php/php.ini $PHP_INI_DIR/

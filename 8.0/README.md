@@ -14,6 +14,7 @@ Build packages
 - Composer - `2.1.3`
 - NodeJs - `14.17.4`
 - Npm - `7.17.0`
+- GIt - `2.32.0`
 
 # Build
 
