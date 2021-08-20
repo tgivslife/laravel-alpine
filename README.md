@@ -17,4 +17,3 @@ Laravel PHP framework running on PHP-FPM with alpine base Docker Image
 - [NodeJs](https://nodejs.org/en/)
 - [Npm](https://www.npmjs.com/)
 - [Git](https://git-scm.com/)
-

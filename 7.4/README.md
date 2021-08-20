@@ -1,10 +1,10 @@
-# 8.0
+# 7.4
 
 ## What's Included
 
 Default packages
 
-- PHP-FPM `8.0.9`
+- PHP-FPM `7.4.22`
 - Nginx `1.20.1`
 - Supervisor `4.2.2`
 - CRON
@@ -21,19 +21,19 @@ Build packages
 ### Image used for building laravel application
 
 ```
-docker build --no-cache -t sts/laravel-alpine-build:8.0 --build-arg INCLUDE_BUILD_TOOLS=true -f 8.0/Dockerfile ./8.0
+docker build --no-cache -t sts/laravel-alpine-build:7.4 --build-arg INCLUDE_BUILD_TOOLS=true -f 7.4/Dockerfile ./7.4
 ```
 
 ### Image used for running laravel application
 
 ```
-docker build --no-cache -t sts/laravel-alpine:8.0 -f 8.0/Dockerfile ./8.0
+docker build --no-cache -t sts/laravel-alpine:7.4 -f 7.4/Dockerfile ./7.4
 ```
 
 The current arguments that can be set by `--build-args` (_docker build --build-arg VAR1=value1_):
 
-- Alpine version: `--build-arg ALPINE_VERSION=3.15` , default is __3.14__
-- Php version: `--build-arg PHP_VERSION=8.0.9` , default is __8.0.9__
+- Alpine version: `--build-arg ALPINE_VERSION=3.14` , default is __3.14__
+- Php version: `--build-arg PHP_VERSION=7.4` , default is __7.4__
 - Docker registry: `--build-arg REGISTRY=repos.stsnet.ro` , default __docker.io__
 - Include packages used for build: `--build-arg INCLUDE_BUILD_TOOLS=false` , default is __false__
 

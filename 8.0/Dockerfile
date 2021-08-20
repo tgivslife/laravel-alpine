@@ -1,13 +1,13 @@
 ARG ALPINE_VERSION=3.14
 ARG PHP_VERSION=8.0.9
+ARG REGISTRY=docker.io
 ARG INCLUDE_BUILD_TOOLS=false
-ARG REPOS
 
-FROM ${REPOS}php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION}
+FROM ${REGISTRY}/php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION}
 
 ARG INCLUDE_BUILD_TOOLS
 
-ENV PHP_MAX_EXECUTION_TIME="30" \
+ENV PHP_MAX_EXECUTION_TIME="60" \
     PHP_MEMORY_LIMIT="128M" \
     PHP_UPLOAD_MAX_FILESIZE="50M" \
     PHP_POST_MAX_SIZE="50M" \
@@ -41,12 +41,12 @@ RUN apk add --no-cache --virtual .build-deps \
       bzip2-dev \
       postgresql-dev \
       libzip-dev \
-      freetype-dev && \
-    docker-php-ext-configure opcache --enable-opcache && \
-    docker-php-ext-configure gd --with-jpeg=/usr/include/ --with-freetype=/usr/include/ && \
-    docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql &&\
-    docker-php-ext-configure zip && \
-    docker-php-ext-install opcache \
+      freetype-dev \
+    && docker-php-ext-configure opcache --enable-opcache \
+    && docker-php-ext-configure gd --with-jpeg=/usr/include/ --with-freetype=/usr/include/ \
+    && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
+    && docker-php-ext-configure zip \
+    && docker-php-ext-install opcache \
       pdo_pgsql \
       pgsql \
       pdo \
@@ -58,10 +58,10 @@ RUN apk add --no-cache --virtual .build-deps \
       zip \
       pcntl \
       bcmath \
-      exif && \
-    docker-php-source delete && \
-    apk del .build-deps && \
-    apk add --no-cache libbz2 \
+      exif \
+    && docker-php-source delete \
+    && apk del .build-deps \
+    && apk add --no-cache libbz2 \
       libpq \
       libpng \
       libjpeg-turbo \
@@ -71,7 +71,9 @@ RUN apk add --no-cache --virtual .build-deps \
       supervisor \
       nginx
 
-RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then apk add --no-cache git composer nodejs npm ; fi
+RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then \
+      apk add --no-cache git make composer nodejs npm ; \
+    fi
 
 # Configure php/php-fpm
 COPY conf/php/php.ini $PHP_INI_DIR/
@@ -86,10 +88,13 @@ COPY conf/nginx/default.conf /etc/nginx/http.d/default.conf
 COPY conf/supervisor/supervisord.conf /etc/supervisord.conf
 COPY conf/supervisor/supervisor.d /etc/supervisor.d
 
-COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+# Configure entrypoint
+COPY conf/docker-entrypoint.d /docker-entrypoint.d/
+COPY docker-entrypoint.sh /
 
-# Setup Working Dir
+RUN chmod +x /docker-entrypoint.d/* \
+    && chmod +x /docker-entrypoint.sh
+
 WORKDIR /var/www/html
 
 ENTRYPOINT ["sh", "/docker-entrypoint.sh"]
