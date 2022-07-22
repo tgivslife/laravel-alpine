@@ -73,45 +73,6 @@ The current environment variables that can be set by `--env` (_docker run --env 
 
         PHP_POST_MAX_SIZE="50M"
 
-#### PHP OPCACHE related
-
-- Enables the opcode cache. When disabled, code is not optimised or cached
-
-        PHP_OPCACHE_ENABLE="1"
-
-- Enables the opcode cache for the CLI version of PHP
-
-        PHP_OPCACHE_ENABLE="1"
-
-- How often to check script timestamps for updates, in seconds. 0 will result in OPcache checking for updates on every request. This configuration directive is ignored if opcache.validate_timestamps
-  is disabled.
-
-        PHP_OPCACHE_REVALIDATE_FREQUENCY="0"
-
-- If enabled, OPcache will check for updated scripts every opcache.revalidate_freq seconds. When this directive is disabled, you must reset OPcache manually via opcache_reset(), opcache_invalidate()
-  or by restarting the Web server for changes to the filesystem to take effect.
-
-        PHP_OPCACHE_VALIDATE_TIMESTAMPS="0"
-
-- The maximum number of keys (and therefore scripts) in the OPcache hash table. The actual value used will be the first number in the set of prime numbers { 223, 463, 983, 1979, 3907, 7963, 16229,
-  32531, 65407, 130987, 262237, 524521, 1048793 } that is greater than or equal to the configured value. The minimum value is 200. The maximum value is 1000000. Values outside of this range are
-  clamped to the permissible range.
-
-        PHP_OPCACHE_MAX_ACCELERATED_FILES="65407"
-
-- The size of the shared memory storage used by OPcache, in megabytes. The minimum permissible value is "8", which is enforced if a smaller value is set.
-
-        PHP_OPCACHE_MEMORY_CONSUMPTION="512"
-
-- The maximum percentage of wasted memory that is allowed before a restart is scheduled, if there is insufficient free memory. The maximum permissible value is "50", which is enforced if a larger
-  value is set.
-
-        PHP_OPCACHE_MAX_WASTED_PERCENTAGE="10"
-
-- The amount of memory used to store interned strings, in megabytes.
-
-        PHP_OPCACHE_INTERNED_STRINGS_BUFFER="16"
-
 #### PHP-FPM related
 
 - The number of child processes to be created when pm is set to static and the maximum number of child processes to be created when pm is set to dynamic.
