@@ -29,7 +29,7 @@ ENV PHP_MAX_EXECUTION_TIME="60" \
     NGINX_CLIENT_MAX_BODY_SIZE="50m" \
     NGINX_SET_REAL_IP_FROM="127.0.0.1" \
 
-    LARAVEL_SCHEDULER_ENABLE="0" \
+    LARAVEL_SCHEDULER_ENABLE="1" \
     LARAVEL_HORIZON_ENABLE="0"
 
 # Add Build Dependencies | # Configure & Install Extension | # Remove Build Dependencies
