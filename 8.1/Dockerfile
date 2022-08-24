@@ -84,6 +84,7 @@ COPY conf/php-fpm/www.conf /usr/local/etc/php-fpm.d/
 # Configure nginx
 COPY conf/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY conf/nginx/default.conf /etc/nginx/http.d/default.conf
+RUN chown -R www-data:www-data /var/lib/nginx
 
 # Configure supervisor
 COPY conf/supervisor/supervisord.conf /etc/supervisord.conf
