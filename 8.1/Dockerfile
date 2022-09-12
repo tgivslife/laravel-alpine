@@ -1,5 +1,5 @@
 ARG ALPINE_VERSION=3.16
-ARG PHP_VERSION=8.1.8
+ARG PHP_VERSION=8.1.10
 ARG REGISTRY=docker.io
 ARG INCLUDE_BUILD_TOOLS=false
 
@@ -72,7 +72,7 @@ RUN apk add --no-cache --virtual .build-deps \
       nginx
 
 RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then \
-      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.3.10 \
+      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.4.1 \
       && apk add --no-cache git make nodejs npm ; \
     fi
 

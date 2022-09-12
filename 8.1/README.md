@@ -4,15 +4,15 @@
 
 Default packages
 
-- PHP-FPM `8.1.8`
+- PHP-FPM `8.1.10`
 - Nginx `1.22.0`
 - Supervisor `4.2.4`
-- CRON
+- CRON `1.35.0`
 
 Build packages
 
-- Composer - `2.3.10`
-- NodeJs - `16.15.0`
+- Composer - `2.4.1`
+- NodeJs - `16.16.0`
 - Npm - `8.10.0`
 - Git - `2.36.2`
 
@@ -23,19 +23,19 @@ When building images the following naming convention is required `[php version]`
 ### Image used for building laravel application
 
 ```
-docker build --no-cache -t 8.1.8-laravel-alpine3.16-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.1/Dockerfile ./8.1
+docker build --no-cache -t 8.1.10-laravel-alpine3.16-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.1/Dockerfile ./8.1
 ```
 
 ### Image used for running laravel application
 
 ```
-docker build --no-cache -t 8.1.8-laravel-alpine3.16 -f 8.1/Dockerfile ./8.1
+docker build --no-cache -t 8.1.10-laravel-alpine3.16 -f 8.1/Dockerfile ./8.1
 ```
 
 The current arguments that can be set by `--build-args` (_docker build --build-arg VAR1=value1_):
 
 - Alpine version: `--build-arg ALPINE_VERSION=3.16` , default is __3.16__
-- Php version: `--build-arg PHP_VERSION=8.1.8` , default is __8.1.8__
+- Php version: `--build-arg PHP_VERSION=8.1.10` , default is __8.1.10__
 - Docker registry: `--build-arg REGISTRY=repos.stsnet.ro` , default __docker.io__
 - Include packages used for build: `--build-arg INCLUDE_BUILD_TOOLS=false` , default is __false__
 
