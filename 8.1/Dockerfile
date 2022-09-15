@@ -42,10 +42,16 @@ RUN apk add --no-cache --virtual .build-deps \
       postgresql-dev \
       libzip-dev \
       freetype-dev \
+      autoconf \
+      gcc g++ \
+      make \
     && docker-php-ext-configure opcache --enable-opcache \
     && docker-php-ext-configure gd --with-jpeg=/usr/include/ --with-freetype=/usr/include/ \
     && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
     && docker-php-ext-configure zip \
+    && pecl install -o -f redis \
+    && rm -rf /tmp/pear \
+    && docker-php-ext-enable redis \
     && docker-php-ext-install opcache \
       pdo_pgsql \
       pgsql \

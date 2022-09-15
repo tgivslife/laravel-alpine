@@ -16,6 +16,59 @@ Build packages
 - Npm - `8.10.0`
 - Git - `2.36.2`
 
+Php Modules
+```
+[PHP Modules]
+bcmath
+bz2
+Core
+ctype
+curl
+date
+dom
+exif
+fileinfo
+filter
+ftp
+gd
+hash
+iconv
+intl
+json
+libxml
+mbstring
+mysqlnd
+openssl
+pcntl
+pcre
+PDO
+pdo_pgsql
+pdo_sqlite
+pgsql
+Phar
+posix
+readline
+redis
+Reflection
+session
+SimpleXML
+sockets
+sodium
+SPL
+sqlite3
+standard
+tokenizer
+xml
+xmlreader
+xmlwriter
+Zend OPcache
+zip
+zlib
+
+[Zend Modules]
+Zend OPcache
+```
+
 # Build
 
 When building images the following naming convention is required `[php version]`.`laravel-alpine[alpine version]`-`|build`
