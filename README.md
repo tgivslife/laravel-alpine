@@ -1,6 +1,6 @@
 # Laravel-Alpine
 
-Laravel PHP framework running on PHP-FPM with alpine base Docker Image
+The Laravel Build/Runtime Container has been carefully engineered to provide you and your team with a highly reproducible Laravel build and runtime environment.
 
 ## What's Included
 
@@ -20,6 +20,7 @@ Laravel PHP framework running on PHP-FPM with alpine base Docker Image
 
 ### Images
 
+- [8.2](8.2/README.md)
 - [8.1](8.1/README.md)
 - [8.0](8.0/README.md)
 - [7.4](7.4/README.md)

@@ -21,11 +21,13 @@ ENV PHP_MAX_EXECUTION_TIME="60" \
     PHP_OPCACHE_MAX_WASTED_PERCENTAGE="10" \
     PHP_OPCACHE_INTERNED_STRINGS_BUFFER="16" \
 
+    PHP_FPM_REQUEST_TERMINATE_TIMEOUT="60" \
     PHP_FPM_PM_MAX_CHILDREN="50" \
     PHP_FPM_PM_START_SERVERS="20" \
     PHP_FPM_PM_MIN_SPARE_SERVER="10" \
     PHP_FPM_PM_MAX_SPARE_SERVERS="30" \
 
+    NGINX_FASTCGI_READ_TIMEOUT="60s" \
     NGINX_CLIENT_MAX_BODY_SIZE="50m" \
     NGINX_SET_REAL_IP_FROM="127.0.0.1" \
 
@@ -45,6 +47,7 @@ RUN apk add --no-cache --virtual .build-deps \
       autoconf \
       gcc g++ \
       make \
+      linux-headers \
     && docker-php-ext-configure opcache --enable-opcache \
     && docker-php-ext-configure gd --with-jpeg=/usr/include/ --with-freetype=/usr/include/ \
     && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
@@ -78,7 +81,7 @@ RUN apk add --no-cache --virtual .build-deps \
       nginx
 
 RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then \
-      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.4.1 \
+      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.5.1 \
       && apk add --no-cache git make nodejs npm ; \
     fi
 
@@ -90,7 +93,7 @@ COPY conf/php-fpm/www.conf /usr/local/etc/php-fpm.d/
 # Configure nginx
 COPY conf/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY conf/nginx/default.conf /etc/nginx/http.d/default.conf
-RUN chown -Rf www-data:www-data /var/lib/nginx
+RUN addgroup nginx www-data
 
 # Configure supervisor
 COPY conf/supervisor/supervisord.conf /etc/supervisord.conf
@@ -105,5 +108,6 @@ RUN chmod +x /docker-entrypoint.d/* \
 
 WORKDIR /var/www/html
 
+EXPOSE 80
 ENTRYPOINT ["sh", "/docker-entrypoint.sh"]
 CMD supervisord -c /etc/supervisord.conf
