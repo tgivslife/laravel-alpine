@@ -4,38 +4,112 @@
 
 Default packages
 
-- PHP-FPM `7.4.22`
-- Nginx `1.20.1`
-- Supervisor `4.2.2`
-- CRON
+- PHP-FPM `7.4.33`
+- Nginx `1.22.1`
+- Supervisor `4.2.4`
+- CRON `1.35.0`
 
 Build packages
 
-- Composer - `2.1.3`
-- NodeJs - `14.17.4`
-- Npm - `7.17.0`
-- GIt - `2.32.0`
+- Composer - `2.5.1`
+- NodeJs - `16.19.1`
+- Npm - `8.10.0`
+- GIt - `2.36.5`
+
+Php Modules
+
+```
+[PHP Modules]
+bcmath
+bz2
+Core
+ctype
+curl
+date
+dom
+exif
+fileinfo
+filter
+ftp
+gd
+hash
+iconv
+intl
+json
+libxml
+mbstring
+mysqlnd
+openssl
+pcntl
+pcre
+PDO
+pdo_pgsql
+pdo_sqlite
+pgsql
+Phar
+posix
+readline
+Reflection
+session
+SimpleXML
+sockets
+sodium
+SPL
+sqlite3
+standard
+tokenizer
+xml
+xmlreader
+xmlwriter
+Zend OPcache
+zip
+zlib
+
+[Zend Modules]
+Zend OPcache
+```
 
 # Build
+
+When building images the following naming convention is required `[php version]`.`laravel-alpine[alpine version]`-`|build`
 
 ### Image used for building laravel application
 
 ```
-docker build --no-cache -t sts/laravel-alpine-build:7.4 --build-arg INCLUDE_BUILD_TOOLS=true -f 7.4/Dockerfile ./7.4
+docker build --no-cache -t php:7.4.33-laravel-alpine3.16-build --build-arg INCLUDE_BUILD_TOOLS=true -f 7.4/Dockerfile ./7.4
 ```
 
 ### Image used for running laravel application
 
 ```
-docker build --no-cache -t sts/laravel-alpine:7.4 -f 7.4/Dockerfile ./7.4
+docker build --no-cache -t php:7.4.33-laravel-alpine3.16 -f 7.4/Dockerfile ./7.4
 ```
 
 The current arguments that can be set by `--build-args` (_docker build --build-arg VAR1=value1_):
 
-- Alpine version: `--build-arg ALPINE_VERSION=3.14` , default is __3.14__
-- Php version: `--build-arg PHP_VERSION=7.4` , default is __7.4__
+- Alpine version: `--build-arg ALPINE_VERSION=3.16` , default is __3.16__
+- Php version: `--build-arg PHP_VERSION=7.4.33` , default is __7.4.33__
 - Docker registry: `--build-arg REGISTRY=repos.stsnet.ro` , default __docker.io__
 - Include packages used for build: `--build-arg INCLUDE_BUILD_TOOLS=false` , default is __false__
+
+# Publish to [hub.docker.com](https://hub.docker.com/)
+
+Docker Hub repositories allow you share container images with your team, customers, or the Docker community at large.
+
+Docker images are pushed to Docker Hub through the docker push command. A single Docker Hub repository can hold many Docker images (stored as tags).
+
+1. Using `docker login --username=tgivslife` from the CLI, sign in
+
+2. Re-tag an existing local image `docker tag <existing-image> <hub-user>/<repo-name>[:<tag>]`
+
+    ```
+    docker tag php:7.4.33-laravel-alpine3.16-build stsdockerhub/php:7.4.33-laravel-alpine3.16-build
+    ```
+3. Push your newly tagged private images to your Docker namespace
+
+   ```
+   docker push stsdockerhub/php:7.4.33-laravel-alpine3.16-build
+   ```
 
 # Run
 
@@ -46,7 +120,7 @@ The current environment variables that can be set by `--env` (_docker run --env 
 - Laravel's command scheduler offers a fresh approach to managing scheduled tasks on your server. The scheduler allows you to fluently and expressively define your command schedule within your Laravel
   application itself. When using the scheduler, only a single cron entry is needed on your server.
 
-        LARAVEL_SCHEDULER_ENABLE="0"
+        LARAVEL_SCHEDULER_ENABLE="1"
 
 - Laravel Horizon provides a beautiful dashboard and code-driven configuration for your Laravel powered Redis queues. Horizon allows you to easily monitor key metrics of your queue system such as job
   throughput, runtime, and job failures.
