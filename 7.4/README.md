@@ -104,11 +104,13 @@ Docker images are pushed to Docker Hub through the docker push command. A single
 
     ```
     docker tag php:7.4.33-laravel-alpine3.16-build stsdockerhub/php:7.4.33-laravel-alpine3.16-build
+    docker tag php:7.4.33-laravel-alpine3.16 stsdockerhub/php:7.4.33-laravel-alpine3.16
     ```
 3. Push your newly tagged private images to your Docker namespace
 
    ```
    docker push stsdockerhub/php:7.4.33-laravel-alpine3.16-build
+   docker push stsdockerhub/php:7.4.33-laravel-alpine3.16
    ```
 
 # Run
