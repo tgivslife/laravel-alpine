@@ -44,10 +44,12 @@ RUN apk add --no-cache --virtual .build-deps \
       postgresql-dev \
       libzip-dev \
       freetype-dev \
+      openldap-dev \
     && docker-php-ext-configure opcache --enable-opcache \
     && docker-php-ext-configure gd --with-jpeg=/usr/include/ --with-freetype=/usr/include/ \
     && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
     && docker-php-ext-configure zip \
+    && docker-php-ext-configure ldap \
     && docker-php-ext-install opcache \
       pdo_pgsql \
       pgsql \
@@ -60,12 +62,14 @@ RUN apk add --no-cache --virtual .build-deps \
       zip \
       pcntl \
       bcmath \
+      ldap \
       exif \
     && docker-php-source delete \
     && apk del .build-deps \
     && apk add --no-cache libbz2 \
       libpq \
       libpng \
+      libldap \
       libjpeg-turbo \
       freetype \
       icu-libs \
