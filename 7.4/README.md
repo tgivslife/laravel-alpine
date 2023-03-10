@@ -34,8 +34,10 @@ ftp
 gd
 hash
 iconv
+imagick
 intl
 json
+ldap
 libxml
 mbstring
 mysqlnd

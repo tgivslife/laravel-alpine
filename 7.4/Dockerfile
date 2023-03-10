@@ -45,6 +45,14 @@ RUN apk add --no-cache --virtual .build-deps \
       libzip-dev \
       freetype-dev \
       openldap-dev \
+      imagemagick-dev \
+      libtool \
+      autoconf \
+      g++ \
+      make \
+    && apk add --no-cache imagemagick libgomp \
+    && pecl install imagick \
+    && docker-php-ext-enable imagick \
     && docker-php-ext-configure opcache --enable-opcache \
     && docker-php-ext-configure gd --with-jpeg=/usr/include/ --with-freetype=/usr/include/ \
     && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
