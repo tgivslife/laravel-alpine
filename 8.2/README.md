@@ -4,17 +4,17 @@
 
 Default packages
 
-- PHP-FPM `8.2.1`
+- PHP-FPM `8.2.5`
 - Nginx `1.22.1`
 - Supervisor `4.2.4`
 - CRON `1.35.0`
 
 Build packages
 
-- Composer - `2.5.1`
-- NodeJs - `18.12.1`
+- Composer - `2.5.5`
+- NodeJs - `18.14.2`
 - Npm - `9.1.2`
-- Git - `2.38.2`
+- Git - `2.38.5`
 
 Php Modules
 
@@ -78,19 +78,19 @@ When building images the following naming convention is required `[php version]`
 ### Image used for building laravel application
 
 ```
-docker build --no-cache -t php:8.2.1-laravel-alpine3.17-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.2/Dockerfile ./8.2
+docker build --no-cache -t php:8.2.5-laravel-alpine3.17-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.2/Dockerfile ./8.2
 ```
 
 ### Image used for running laravel application
 
 ```
-docker build --no-cache -t php:8.2.1-laravel-alpine3.17 -f 8.2/Dockerfile ./8.2
+docker build --no-cache -t php:8.2.5-laravel-alpine3.17 -f 8.2/Dockerfile ./8.2
 ```
 
 The current arguments that can be set by `--build-args` (_docker build --build-arg VAR1=value1_):
 
 - Alpine version: `--build-arg ALPINE_VERSION=3.17` , default is __3.17__
-- Php version: `--build-arg PHP_VERSION=8.2.1` , default is __8.2.1__
+- Php version: `--build-arg PHP_VERSION=8.2.5` , default is __8.2.5__
 - Docker registry: `--build-arg REGISTRY=repos.stsnet.ro` , default __docker.io__
 - Include packages used for build: `--build-arg INCLUDE_BUILD_TOOLS=false` , default is __false__
 
@@ -105,12 +105,14 @@ Docker images are pushed to Docker Hub through the docker push command. A single
 2. Re-tag an existing local image `docker tag <existing-image> <hub-user>/<repo-name>[:<tag>]`
 
     ```
-    docker tag php:8.2.1-laravel-alpine3.17-build stsdockerhub/php:8.2.1-laravel-alpine3.17-build
+    docker tag php:8.2.5-laravel-alpine3.17-build stsdockerhub/php:8.2.5-laravel-alpine3.17-build
+    docker tag php:8.2.5-laravel-alpine3.17 stsdockerhub/php:8.2.5-laravel-alpine3.17
     ```
 3. Push your newly tagged private images to your Docker namespace
 
    ```
-   docker push stsdockerhub/php:8.2.1-laravel-alpine3.17-build
+   docker push stsdockerhub/php:8.2.5-laravel-alpine3.17-build
+   docker push stsdockerhub/php:8.2.5-laravel-alpine3.17
    ```
 
 # Run
