@@ -87,7 +87,8 @@ RUN apk add --no-cache --virtual .build-deps \
 
 RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then \
       php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.5.1 \
-      && apk add --no-cache git make nodejs npm ; \
+      && apk add --no-cache git make nodejs npm \
+      && npm install -g npm@latest ; \
     fi
 
 # Configure php/php-fpm
