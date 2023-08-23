@@ -4,15 +4,15 @@
 
 Default packages
 
-- PHP-FPM `8.2.6`
+- PHP-FPM `8.2.9`
 - Nginx `1.22.1`
 - Supervisor `4.2.4`
 - CRON `1.35.0`
 
 Build packages
 
-- Composer - `2.5.5`
-- NodeJs - `18.16.0`
+- Composer - `2.5.8`
+- NodeJs - `18.17.0`
 - Npm - `9.1.2`
 - Git - `2.38.5`
 
@@ -78,25 +78,25 @@ When building images the following naming convention is required `[php version]`
 ### Image used for building laravel application
 
 ```
-docker build --no-cache -t php:8.2.6-laravel-alpine3.17-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.2/Dockerfile ./8.2
+docker build --no-cache -t php:8.2.9-laravel-alpine3.17-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.2/Dockerfile ./8.2
 ```
 
 ### Image used for running laravel application
 
 ```
-docker build --no-cache -t php:8.2.6-laravel-alpine3.17 -f 8.2/Dockerfile ./8.2
+docker build --no-cache -t php:8.2.9-laravel-alpine3.17 -f 8.2/Dockerfile ./8.2
 ```
 
 The current arguments that can be set by `--build-args` (_docker build --build-arg VAR1=value1_):
 
 - Alpine version: `--build-arg ALPINE_VERSION=3.17` , default is __3.17__
-- Php version: `--build-arg PHP_VERSION=8.2.6` , default is __8.2.6__
+- Php version: `--build-arg PHP_VERSION=8.2.9` , default is __8.2.9__
 - Docker registry: `--build-arg REGISTRY=repos.stsnet.ro` , default __docker.io__
 - Include packages used for build: `--build-arg INCLUDE_BUILD_TOOLS=false` , default is __false__
 
 # Publish to [hub.docker.com](https://hub.docker.com/)
 
-Docker Hub repositories allow you share container images with your team, customers, or the Docker community at large.
+Docker Hub repositories allow you to share container images with your team, customers, or the Docker community at large.
 
 Docker images are pushed to Docker Hub through the docker push command. A single Docker Hub repository can hold many Docker images (stored as tags).
 
@@ -105,14 +105,14 @@ Docker images are pushed to Docker Hub through the docker push command. A single
 2. Re-tag an existing local image `docker tag <existing-image> <hub-user>/<repo-name>[:<tag>]`
 
     ```
-    docker tag php:8.2.6-laravel-alpine3.17-build stsdockerhub/php:8.2.6-laravel-alpine3.17-build
-    docker tag php:8.2.6-laravel-alpine3.17 stsdockerhub/php:8.2.6-laravel-alpine3.17
+    docker tag php:8.2.9-laravel-alpine3.17-build stsdockerhub/php:8.2.9-laravel-alpine3.17-build
+    docker tag php:8.2.9-laravel-alpine3.17 stsdockerhub/php:8.2.9-laravel-alpine3.17
     ```
 3. Push your newly tagged private images to your Docker namespace
 
    ```
-   docker push stsdockerhub/php:8.2.6-laravel-alpine3.17-build
-   docker push stsdockerhub/php:8.2.6-laravel-alpine3.17
+   docker push stsdockerhub/php:8.2.9-laravel-alpine3.17-build
+   docker push stsdockerhub/php:8.2.9-laravel-alpine3.17
    ```
 
 # Run
@@ -200,7 +200,7 @@ The current environment variables that can be set by `--env` (_docker run --env 
 
 - The timeout for serving a single request after which the worker process will be killed.
   This option should be used when the 'max_execution_time' ini option does not stop script execution for some reason.
-  A value of '0' means 'Off'. Available units: s(econds)(default), m(inutes), h(ours), or d(ays).
+  A value of '0' means 'Off'. Available units: s(seconds)(default), m(minutes), h(ours), or d(ays).
 
         PHP_FPM_REQUEST_TERMINATE_TIMEOUT="60"
 
@@ -213,11 +213,11 @@ The current environment variables that can be set by `--env` (_docker run --env 
 
         PHP_FPM_PM_START_SERVERS="20"
 
-- The desired minimum number of idle server processes. Used only when pm is set to dynamic. Also mandatory in this case.
+- The desired minimum number of idle server processes. Used only when pm is set to dynamic. Also, mandatory in this case.
 
         PHP_FPM_PM_MIN_SPARE_SERVER="10"
 
-- The desired maximum number of idle server processes. Used only when pm is set to dynamic. Also mandatory in this case.
+- The desired maximum number of idle server processes. Used only when pm is set to dynamic. Also, mandatory in this case.
 
         PHP_FPM_PM_MAX_SPARE_SERVERS="30"
 
