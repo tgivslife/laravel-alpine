@@ -1,5 +1,5 @@
-ARG ALPINE_VERSION=3.17
-ARG PHP_VERSION=8.2.9
+ARG ALPINE_VERSION=3.18
+ARG PHP_VERSION=8.2.10
 ARG REGISTRY=docker.io
 ARG INCLUDE_BUILD_TOOLS=false
 
@@ -11,7 +11,7 @@ ENV PHP_MAX_EXECUTION_TIME="60" \
     PHP_MEMORY_LIMIT="128M" \
     PHP_UPLOAD_MAX_FILESIZE="50M" \
     PHP_POST_MAX_SIZE="50M" \
-
+    \
     PHP_OPCACHE_ENABLE="1" \
     PHP_OPCACHE_ENABLE_CLI="1" \
     PHP_OPCACHE_REVALIDATE_FREQUENCY="0" \
@@ -20,17 +20,17 @@ ENV PHP_MAX_EXECUTION_TIME="60" \
     PHP_OPCACHE_MEMORY_CONSUMPTION="512" \
     PHP_OPCACHE_MAX_WASTED_PERCENTAGE="10" \
     PHP_OPCACHE_INTERNED_STRINGS_BUFFER="16" \
-
+    \
     PHP_FPM_REQUEST_TERMINATE_TIMEOUT="60" \
     PHP_FPM_PM_MAX_CHILDREN="50" \
     PHP_FPM_PM_START_SERVERS="20" \
     PHP_FPM_PM_MIN_SPARE_SERVER="10" \
     PHP_FPM_PM_MAX_SPARE_SERVERS="30" \
-
+    \
     NGINX_FASTCGI_READ_TIMEOUT="60s" \
     NGINX_CLIENT_MAX_BODY_SIZE="50m" \
     NGINX_SET_REAL_IP_FROM="127.0.0.1" \
-
+    \
     LARAVEL_SCHEDULER_ENABLE="1" \
     LARAVEL_HORIZON_ENABLE="0"
 
@@ -81,7 +81,7 @@ RUN apk add --no-cache --virtual .build-deps \
       nginx
 
 RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then \
-      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.5.8 \
+      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.6.2 \
       && apk add --no-cache git make nodejs npm ; \
     fi
 
