@@ -4,15 +4,15 @@
 
 Default packages
 
-- PHP-FPM `8.2.10`
+- PHP-FPM `8.2.12`
 - Nginx `1.24.0`
 - Supervisor `4.2.5`
 - CRON `1.36.1`
 
 Build packages
 
-- Composer - `2.6.2`
-- NodeJs - `18.17.1`
+- Composer - `2.6.5`
+- NodeJs - `18.18.2`
 - Npm - `9.6.6`
 - Git - `2.40.1`
 
@@ -22,7 +22,6 @@ Php Modules
 [PHP Modules]
 bcmath
 bz2
-cgi-fcgi
 Core
 ctype
 curl
@@ -79,13 +78,13 @@ When building images the following naming convention is required `[php version]`
 ### Image used for building laravel application
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.2.10-laravel-alpine3.18-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.2/Dockerfile ./8.2
+docker build --no-cache -t stsdockerhub/php:8.2.12-laravel-alpine3.18-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.2/Dockerfile ./8.2
 ```
 
 ### Image used for running laravel application
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.2.10-laravel-alpine3.18 -f 8.2/Dockerfile ./8.2
+docker build --no-cache -t stsdockerhub/php:8.2.12-laravel-alpine3.18 -f 8.2/Dockerfile ./8.2
 ```
 
 The current arguments that can be set by `--build-args` (_docker build --build-arg VAR1=value1_):
