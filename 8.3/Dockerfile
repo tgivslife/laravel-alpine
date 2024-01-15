@@ -14,14 +14,14 @@ ENV PHP_MAX_EXECUTION_TIME="60" \
     \
     PHP_OPCACHE_ENABLE="1" \
     PHP_OPCACHE_ENABLE_CLI="1" \
-    PHP_OPCACHE_REVALIDATE_FREQUENCY="0" \
-    PHP_OPCACHE_VALIDATE_TIMESTAMPS="0" \
-    PHP_OPCACHE_MAX_ACCELERATED_FILES="65407" \
     PHP_OPCACHE_MEMORY_CONSUMPTION="512" \
-    PHP_OPCACHE_MAX_WASTED_PERCENTAGE="10" \
-    PHP_OPCACHE_INTERNED_STRINGS_BUFFER="16" \
+    PHP_OPCACHE_INTERNED_STRINGS_BUFFER="64" \
+    PHP_OPCACHE_MAX_ACCELERATED_FILES="65406" \
+    PHP_OPCACHE_MAX_WASTED_PERCENTAGE="15" \
+    PHP_OPCACHE_VALIDATE_TIMESTAMPS="0" \
+    PHP_OPCACHE_REVALIDATE_FREQUENCY="60" \
+    PHP_OPCACHE_SAVE_COMMENTS="1" \
     \
-    PHP_FPM_REQUEST_TERMINATE_TIMEOUT="60" \
     PHP_FPM_PM_MAX_CHILDREN="50" \
     PHP_FPM_PM_START_SERVERS="20" \
     PHP_FPM_PM_MIN_SPARE_SERVER="10" \
@@ -86,13 +86,13 @@ RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then \
     fi
 
 # Configure php/php-fpm
-#COPY conf/php/php.ini $PHP_INI_DIR/
-#COPY conf/php/opcache.ini $PHP_INI_DIR/conf.d/
-#COPY conf/php-fpm/www.conf /usr/local/etc/php-fpm.d/
+COPY conf/php/php.ini $PHP_INI_DIR/
+COPY conf/php/opcache.ini $PHP_INI_DIR/conf.d/
+COPY conf/php-fpm/www.conf /usr/local/etc/php-fpm.d/
 
 # Configure nginx
-#COPY conf/nginx/nginx.conf /etc/nginx/nginx.conf
-#COPY conf/nginx/default.conf /etc/nginx/http.d/default.conf
+COPY conf/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY conf/nginx/default.conf /etc/nginx/http.d/default.conf
 RUN addgroup nginx www-data
 
 # Configure supervisor

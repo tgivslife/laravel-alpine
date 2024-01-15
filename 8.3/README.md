@@ -89,8 +89,8 @@ docker build --no-cache -t stsdockerhub/php:8.3.1-laravel-alpine3.19 -f 8.3/Dock
 
 The current arguments that can be set by `--build-args` (_docker build --build-arg VAR1=value1_):
 
-- Alpine version: `--build-arg ALPINE_VERSION=3.18` , default is __3.18__
-- Php version: `--build-arg PHP_VERSION=8.2.14` , default is __8.2.14__
+- Alpine version: `--build-arg ALPINE_VERSION=3.19` , default is __3.19__
+- Php version: `--build-arg PHP_VERSION=8.3.1` , default is __8.3.1__
 - Docker registry: `--build-arg REGISTRY=repos.stsnet.ro` , default __docker.io__
 - Include packages used for build: `--build-arg INCLUDE_BUILD_TOOLS=false` , default is __false__
 
@@ -105,8 +105,8 @@ Docker images are pushed to Docker Hub through the docker push command. A single
 2. Push your newly tagged private images to your Docker namespace
 
    ```
-   docker push stsdockerhub/php:8.2.14-laravel-alpine3.18-build
-   docker push stsdockerhub/php:8.2.14-laravel-alpine3.18
+   docker push stsdockerhub/php:8.3.1-laravel-alpine3.19-build
+   docker push stsdockerhub/php:8.3.1-laravel-alpine3.19
    ```
 
 # Run
@@ -155,17 +155,14 @@ The current environment variables that can be set by `--env` (_docker run --env 
 
         PHP_OPCACHE_ENABLE_CLI="1"
 
-- How often to check script timestamps for updates, in seconds.
-  0 will result in OPcache checking for updates on every request.
-  This configuration directive is ignored if opcache.validate_timestamps is disabled.
+- The size of the shared memory storage used by OPcache, in megabytes.
+  The minimum permissible value is "8", which is enforced if a smaller value is set.
 
-        PHP_OPCACHE_REVALIDATE_FREQUENCY="0"
+        PHP_OPCACHE_MEMORY_CONSUMPTION="512"
 
-- If enabled, OPcache will check for updated scripts every opcache.revalidate_freq seconds.
-  When this directive is disabled, you must reset OPcache manually via opcache_reset(), opcache_invalidate()
-  or by restarting the Web server for changes to the filesystem to take effect.
+- The amount of memory used to store interned strings, in megabytes.
 
-        PHP_OPCACHE_VALIDATE_TIMESTAMPS="0"
+        PHP_OPCACHE_INTERNED_STRINGS_BUFFER="64"
 
 - The maximum number of keys (and therefore scripts) in the OPcache hash table.
   The actual value used will be the first number in the set of prime numbers {
@@ -174,29 +171,31 @@ The current environment variables that can be set by `--env` (_docker run --env 
   The minimum value is 200. The maximum value is 1000000.
   Values outside of this range are clamped to the permissible range.
 
-        PHP_OPCACHE_MAX_ACCELERATED_FILES="65407"
-
-- The size of the shared memory storage used by OPcache, in megabytes.
-  The minimum permissible value is "8", which is enforced if a smaller value is set.
-
-        PHP_OPCACHE_MEMORY_CONSUMPTION="512"
+        PHP_OPCACHE_MAX_ACCELERATED_FILES="65406"
 
 - The maximum percentage of wasted memory that is allowed before a restart is scheduled, if there is insufficient free memory.
   The maximum permissible value is "50", which is enforced if a larger value is set.
 
-        PHP_OPCACHE_MAX_WASTED_PERCENTAGE="10"
+        PHP_OPCACHE_MAX_WASTED_PERCENTAGE="15"
 
-- The amount of memory used to store interned strings, in megabytes.
+- If enabled, OPcache will check for updated scripts every opcache.revalidate_freq seconds.
+  When this directive is disabled, you must reset OPcache manually via opcache_reset(), opcache_invalidate()
+  or by restarting the Web server for changes to the filesystem to take effect.
 
-        PHP_OPCACHE_INTERNED_STRINGS_BUFFER="16"
+        PHP_OPCACHE_VALIDATE_TIMESTAMPS="0"
+
+- How often to check script timestamps for updates, in seconds.
+  0 will result in OPcache checking for updates on every request.
+  This configuration directive is ignored if opcache.validate_timestamps is disabled.
+
+        PHP_OPCACHE_REVALIDATE_FREQUENCY="60"
+
+- If disabled, all documentation comments will be discarded from the opcode cache to reduce the size of the optimised code. 
+  Disabling this configuration directive may break applications and frameworks that rely on comment parsing for annotations, including Doctrine, Zend Framework 2 and PHPUnit.
+
+        PHP_OPCACHE_SAVE_COMMENTS="1"
 
 #### PHP-FPM related
-
-- The timeout for serving a single request after which the worker process will be killed.
-  This option should be used when the 'max_execution_time' ini option does not stop script execution for some reason.
-  A value of '0' means 'Off'. Available units: s(seconds)(default), m(minutes), h(ours), or d(ays).
-
-        PHP_FPM_REQUEST_TERMINATE_TIMEOUT="60"
 
 - The number of child processes to be created when pm is set to static and the maximum number of child processes to be created when pm is set to dynamic.
 
