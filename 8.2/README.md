@@ -1,10 +1,10 @@
-# 8.2 (8.2.14)
+# 8.2 (8.2.15)
 
 ## What's Included
 
 Default packages
 
-- PHP-FPM `8.2.14`
+- PHP-FPM `8.2.15`
 - Nginx `1.24.0`
 - Supervisor `4.2.5`
 - CRON `1.36.1`
@@ -30,7 +30,6 @@ dom
 exif
 fileinfo
 filter
-ftp
 gd
 hash
 iconv
@@ -78,19 +77,19 @@ When building images the following naming convention is required `[php version]`
 ### Image used for building laravel application
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.2.14-laravel-alpine3.18-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.2/Dockerfile ./8.2
+docker build --no-cache -t stsdockerhub/php:8.2.15-laravel-alpine3.18-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.2/Dockerfile ./8.2
 ```
 
 ### Image used for running laravel application
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.2.14-laravel-alpine3.18 -f 8.2/Dockerfile ./8.2
+docker build --no-cache -t stsdockerhub/php:8.2.15-laravel-alpine3.18 -f 8.2/Dockerfile ./8.2
 ```
 
 The current arguments that can be set by `--build-args` (_docker build --build-arg VAR1=value1_):
 
 - Alpine version: `--build-arg ALPINE_VERSION=3.18` , default is __3.18__
-- Php version: `--build-arg PHP_VERSION=8.2.14` , default is __8.2.14__
+- Php version: `--build-arg PHP_VERSION=8.2.15` , default is __8.2.15__
 - Docker registry: `--build-arg REGISTRY=repos.stsnet.ro` , default __docker.io__
 - Include packages used for build: `--build-arg INCLUDE_BUILD_TOOLS=false` , default is __false__
 
@@ -105,8 +104,8 @@ Docker images are pushed to Docker Hub through the docker push command. A single
 2. Push your newly tagged private images to your Docker namespace
 
    ```
-   docker push stsdockerhub/php:8.2.14-laravel-alpine3.18-build
-   docker push stsdockerhub/php:8.2.14-laravel-alpine3.18
+   docker push stsdockerhub/php:8.2.15-laravel-alpine3.18-build
+   docker push stsdockerhub/php:8.2.15-laravel-alpine3.18
    ```
 
 # Run
