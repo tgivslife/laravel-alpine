@@ -7,7 +7,9 @@ FROM ${REGISTRY}/php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION}
 
 ARG INCLUDE_BUILD_TOOLS
 
-ENV PHP_MAX_EXECUTION_TIME="60" \
+ENV TZ="Europe/Bucharest" \
+    \
+    PHP_MAX_EXECUTION_TIME="60" \
     PHP_MEMORY_LIMIT="128M" \
     PHP_UPLOAD_MAX_FILESIZE="50M" \
     PHP_POST_MAX_SIZE="50M" \
@@ -35,7 +37,9 @@ ENV PHP_MAX_EXECUTION_TIME="60" \
     LARAVEL_HORIZON_ENABLE="0"
 
 # Add Build Dependencies | # Configure & Install Extension | # Remove Build Dependencies
-RUN apk add --no-cache --virtual .build-deps \
+RUN apk update \
+    && apk add --no-cache tzdata \
+    && apk add --no-cache --virtual .build-deps \
       zlib-dev \
       libjpeg-turbo-dev \
       libpng-dev \
