@@ -1,5 +1,5 @@
-ARG ALPINE_VERSION=3.19
-ARG PHP_VERSION=8.3.2
+ARG ALPINE_VERSION=3.20
+ARG PHP_VERSION=8.3.10
 ARG REGISTRY=docker.io
 ARG INCLUDE_BUILD_TOOLS=false
 
@@ -60,9 +60,11 @@ RUN apk update \
     && rm -rf /tmp/pear \
     && docker-php-ext-enable redis \
     && docker-php-ext-install opcache \
+      pdo \
       pdo_pgsql \
       pgsql \
-      pdo \
+      pdo_mysql \
+      mysqli \
       sockets \
       intl \
       gd \
@@ -85,7 +87,7 @@ RUN apk update \
       nginx
 
 RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then \
-      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.6.6 \
+      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.7.8 \
       && apk add --no-cache git make nodejs npm ; \
     fi
 

@@ -1,22 +1,28 @@
 # 8.3 (8.3.2)
 
-## What's Included
+- [What's included](#whats-included)
+- [Build](#build)
+- [Environment variables](#environment-variables)
+- [Publish to hub.docker.com](#publish-to-hubdockercom)
+- [Example deploy app](#example-deploy-app)
+
+### What's included
 
 Default packages
 
-- PHP-FPM `8.3.2`
-- Nginx `1.24.0`
-- Supervisor `4.2.5`
-- CRON `1.36.1`
+- PHP-FPM - `8.3.10`
+- Nginx - `1.26.2`
+- Supervisor - `4.2.5`
+- CRON - `1.36.1`
 
 Build packages
 
-- Composer - `2.6.6`
-- NodeJs - `20.11.0`
-- Npm - `10.2.5`
-- Git - `2.43.0`
+- Composer - `2.7.8`
+- NodeJs - `20.15.1`
+- Npm - `10.8.0`
+- Git - `2.45.2`
 
-Php Modules
+_Php Modules_
 
 ```
 [PHP Modules]
@@ -37,11 +43,13 @@ intl
 json
 libxml
 mbstring
+mysqli
 mysqlnd
 openssl
 pcntl
 pcre
 PDO
+pdo_mysql
 pdo_pgsql
 pdo_sqlite
 pgsql
@@ -70,47 +78,38 @@ zlib
 Zend OPcache
 ```
 
-# Build
+### Build
 
 When building images the following naming convention is required `[php version]`.`laravel-alpine[alpine version]`-`|build`
 
-### Image used for building laravel application
+#### Image used for building laravel application
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.3.2-laravel-alpine3.19-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.3/Dockerfile ./8.3
+docker build --no-cache -t stsdockerhub/php:8.3.10-laravel-alpine3.20-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.3/Dockerfile ./8.3
 ```
 
-### Image used for running laravel application
+#### Image used for running laravel application
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.3.2-laravel-alpine3.19 -f 8.3/Dockerfile ./8.3
+docker build --no-cache -t stsdockerhub/php:8.3.10-laravel-alpine3.20 -f 8.3/Dockerfile ./8.3
 ```
 
 The current arguments that can be set by `--build-args` (_docker build --build-arg VAR1=value1_):
 
-- Alpine version: `--build-arg ALPINE_VERSION=3.19` , default is __3.19__
-- Php version: `--build-arg PHP_VERSION=8.3.2` , default is __8.3.2__
+- Alpine version: `--build-arg ALPINE_VERSION=3.20` , default is __3.20__
+- Php version: `--build-arg PHP_VERSION=8.3.10` , default is __8.3.10__
 - Docker registry: `--build-arg REGISTRY=repos.stsnet.ro` , default __docker.io__
 - Include packages used for build: `--build-arg INCLUDE_BUILD_TOOLS=false` , default is __false__
 
-# Publish to [hub.docker.com](https://hub.docker.com/)
-
-Docker Hub repositories allow you to share container images with your team, customers, or the Docker community at large.
-
-Docker images are pushed to Docker Hub through the docker push command. A single Docker Hub repository can hold many Docker images (stored as tags).
-
-1. Using `docker login --username=tgivslife` from the CLI, sign in
-
-2. Push your newly tagged private images to your Docker namespace
-
-   ```
-   docker push stsdockerhub/php:8.3.2-laravel-alpine3.19-build
-   docker push stsdockerhub/php:8.3.2-laravel-alpine3.19
-   ```
-
-# Run
+### Environment variables
 
 The current environment variables that can be set by `--env` (_docker run --env VAR1=value1_):
+
+#### OS related
+
+- Timezone
+
+        TZ="Europe/Bucharest"
 
 #### LARAVEL related
 
@@ -231,3 +230,56 @@ The current environment variables that can be set by `--env` (_docker run --env 
   Trusted addresses may also be specified using a hostname
 
         NGINX_SET_REAL_IP_FROM="127.0.0.1"
+
+### Publish to [hub.docker.com](https://hub.docker.com/)
+
+Docker Hub repositories allow you to share container images with your team, customers, or the Docker community at large.
+
+Docker images are pushed to Docker Hub through the docker push command. A single Docker Hub repository can hold many Docker images (stored as tags).
+
+1. Using `docker login --username=tgivslife` from the CLI, sign in
+
+2. Push your newly tagged private images to your Docker namespace
+
+   ```
+   docker push stsdockerhub/php:8.3.10-laravel-alpine3.20-build
+   docker push stsdockerhub/php:8.3.10-laravel-alpine3.20
+   ```
+   
+### Example deploy app
+
+Example of dockerfile for deploying laravel application using docker containers.
+
+```dockerfile
+ARG REGISTRY=docker.io/stsdockerhub
+ARG LARAVEL_ALPINE_VERSION=8.3.10-laravel-alpine3.20
+
+FROM ${REGISTRY}/php:${LARAVEL_ALPINE_VERSION}-build as build-container
+
+WORKDIR /var/www/html
+
+# copy app source code
+COPY . .
+COPY .env.example .env.production
+
+# build source code
+RUN composer install --no-dev \
+    && npm install \
+    && npm run build \
+    && tar --owner=www-data --group=www-data --exclude=.git --exclude=docker --exclude=node_modules -czf /tmp/app.tar.gz .
+
+###################################################################################################
+
+FROM ${REGISTRY}/php:${LARAVEL_ALPINE_VERSION}
+
+WORKDIR /var/www/html
+
+COPY --from=build-container /tmp/app.tar.gz .
+
+RUN tar -xf app.tar.gz \
+    && rm -rf app.tar.gz
+
+# Configure entrypoint
+COPY docker/docker-entrypoint.d /docker-entrypoint.d/
+RUN chmod +x /docker-entrypoint.d/*
+```
