@@ -1,4 +1,4 @@
-# 8.3 (8.3.10)
+# 8.3 (8.3.11)
 
 - [What's included](#whats-included)
 - [Build image](#build-image)
