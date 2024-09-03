@@ -1,5 +1,5 @@
 ARG ALPINE_VERSION=3.20
-ARG PHP_VERSION=8.3.10
+ARG PHP_VERSION=8.3.11
 ARG REGISTRY=docker.io
 ARG INCLUDE_BUILD_TOOLS=false
 
@@ -8,6 +8,9 @@ FROM ${REGISTRY}/php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION}
 ARG INCLUDE_BUILD_TOOLS
 
 ENV TZ="Europe/Bucharest" \
+    \
+    LARAVEL_SCHEDULER_ENABLE="1" \
+    LARAVEL_HORIZON_ENABLE="0" \
     \
     PHP_MAX_EXECUTION_TIME="60" \
     PHP_MEMORY_LIMIT="128M" \
@@ -31,10 +34,7 @@ ENV TZ="Europe/Bucharest" \
     \
     NGINX_FASTCGI_READ_TIMEOUT="60s" \
     NGINX_CLIENT_MAX_BODY_SIZE="50m" \
-    NGINX_SET_REAL_IP_FROM="127.0.0.1" \
-    \
-    LARAVEL_SCHEDULER_ENABLE="1" \
-    LARAVEL_HORIZON_ENABLE="0"
+    NGINX_SET_REAL_IP_FROM="127.0.0.1"
 
 # Add Build Dependencies | # Configure & Install Extension | # Remove Build Dependencies
 RUN apk update \
@@ -116,4 +116,4 @@ WORKDIR /var/www/html
 
 EXPOSE 80
 ENTRYPOINT ["sh", "/docker-entrypoint.sh"]
-CMD supervisord -c /etc/supervisord.conf
+CMD ["supervisord", "-c", "/etc/supervisord.conf"]

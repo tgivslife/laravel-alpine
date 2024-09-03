@@ -1,7 +1,7 @@
 # 8.3 (8.3.10)
 
 - [What's included](#whats-included)
-- [Build](#build)
+- [Build image](#build-image)
 - [Environment variables](#environment-variables)
 - [Publish to hub.docker.com](#publish-to-hubdockercom)
 - [Example deploy app](#example-deploy-app)
@@ -10,7 +10,7 @@
 
 Default packages
 
-- PHP-FPM - `8.3.10`
+- PHP-FPM - `8.3.11`
 - Nginx - `1.26.2`
 - Supervisor - `4.2.5`
 - CRON - `1.36.1`
@@ -78,26 +78,28 @@ zlib
 Zend OPcache
 ```
 
-### Build
+The processes (cron, php-fpm, nginx, horizon) are started and managed by supervisor
+
+### Build image
 
 When building images the following naming convention is required `[php version]`.`laravel-alpine[alpine version]`-`|build`
 
-#### Image used for building laravel application
+__Image used for building laravel application__
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.3.10-laravel-alpine3.20-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.3/Dockerfile ./8.3
+docker build --no-cache -t stsdockerhub/php:8.3.11-laravel-alpine3.20-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.3/Dockerfile ./8.3
 ```
 
-#### Image used for running laravel application
+__Image used for running laravel application__
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.3.10-laravel-alpine3.20 -f 8.3/Dockerfile ./8.3
+docker build --no-cache -t stsdockerhub/php:8.3.11-laravel-alpine3.20 -f 8.3/Dockerfile ./8.3
 ```
 
 The current arguments that can be set by `--build-args` (_docker build --build-arg VAR1=value1_):
 
 - Alpine version: `--build-arg ALPINE_VERSION=3.20` , default is __3.20__
-- Php version: `--build-arg PHP_VERSION=8.3.10` , default is __8.3.10__
+- Php version: `--build-arg PHP_VERSION=8.3.11` , default is __8.3.11__
 - Docker registry: `--build-arg REGISTRY=repos.stsnet.ro` , default __docker.io__
 - Include packages used for build: `--build-arg INCLUDE_BUILD_TOOLS=false` , default is __false__
 
@@ -242,17 +244,19 @@ Docker images are pushed to Docker Hub through the docker push command. A single
 2. Push your newly tagged private images to your Docker namespace
 
    ```
-   docker push stsdockerhub/php:8.3.10-laravel-alpine3.20-build
-   docker push stsdockerhub/php:8.3.10-laravel-alpine3.20
+   docker push stsdockerhub/php:8.3.11-laravel-alpine3.20-build
+   docker push stsdockerhub/php:8.3.11-laravel-alpine3.20
    ```
    
 ### Example deploy app
+
+The container image serves the laravel application from `/var/www/html` through nginx. The application is afterwards accessible on port `80`
 
 Example of dockerfile for deploying laravel application using docker containers.
 
 ```dockerfile
 ARG REGISTRY=docker.io/stsdockerhub
-ARG LARAVEL_ALPINE_VERSION=8.3.10-laravel-alpine3.20
+ARG LARAVEL_ALPINE_VERSION=8.3.11-laravel-alpine3.20
 
 FROM ${REGISTRY}/php:${LARAVEL_ALPINE_VERSION}-build as build-container
 
@@ -260,7 +264,7 @@ WORKDIR /var/www/html
 
 # copy app source code
 COPY . .
-COPY .env.example .env.production
+COPY .env.example .env
 
 # build source code
 RUN composer install --no-dev \
