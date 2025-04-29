@@ -35,7 +35,7 @@ ENV PHP_MAX_EXECUTION_TIME="60" \
     LARAVEL_HORIZON_ENABLE="0"
 
 # Add Build Dependencies | # Configure & Install Extension | # Remove Build Dependencies
-RUN apk add --no-cache --virtual .build-deps \
+RUN apk update && apk add --no-cache --virtual .build-deps \
       zlib-dev \
       libjpeg-turbo-dev \
       libpng-dev \
@@ -86,9 +86,8 @@ RUN apk add --no-cache --virtual .build-deps \
       nginx
 
 RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then \
-      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.5.1 \
-      && apk add --no-cache git make nodejs npm \
-      && npm install -g npm@latest ; \
+      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.7.8 \
+      && apk add --no-cache git make nodejs npm ; \
     fi
 
 # Configure php/php-fpm
