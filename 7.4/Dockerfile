@@ -7,11 +7,16 @@ FROM ${REGISTRY}/php:${PHP_VERSION}-fpm-alpine${ALPINE_VERSION}
 
 ARG INCLUDE_BUILD_TOOLS
 
-ENV PHP_MAX_EXECUTION_TIME="60" \
+ENV TZ="Europe/Bucharest" \
+    \
+    LARAVEL_SCHEDULER_ENABLE="1" \
+    LARAVEL_HORIZON_ENABLE="0" \
+    \
+    PHP_MAX_EXECUTION_TIME="60" \
     PHP_MEMORY_LIMIT="128M" \
     PHP_UPLOAD_MAX_FILESIZE="50M" \
     PHP_POST_MAX_SIZE="50M" \
-
+    \
     PHP_OPCACHE_ENABLE="1" \
     PHP_OPCACHE_ENABLE_CLI="1" \
     PHP_OPCACHE_REVALIDATE_FREQUENCY="0" \
@@ -20,22 +25,21 @@ ENV PHP_MAX_EXECUTION_TIME="60" \
     PHP_OPCACHE_MEMORY_CONSUMPTION="512" \
     PHP_OPCACHE_MAX_WASTED_PERCENTAGE="10" \
     PHP_OPCACHE_INTERNED_STRINGS_BUFFER="16" \
-
+    \
     PHP_FPM_REQUEST_TERMINATE_TIMEOUT="60" \
     PHP_FPM_PM_MAX_CHILDREN="50" \
     PHP_FPM_PM_START_SERVERS="20" \
     PHP_FPM_PM_MIN_SPARE_SERVER="10" \
     PHP_FPM_PM_MAX_SPARE_SERVERS="30" \
-
+    \
     NGINX_FASTCGI_READ_TIMEOUT="60s" \
     NGINX_CLIENT_MAX_BODY_SIZE="50m" \
-    NGINX_SET_REAL_IP_FROM="127.0.0.1" \
-
-    LARAVEL_SCHEDULER_ENABLE="1" \
-    LARAVEL_HORIZON_ENABLE="0"
+    NGINX_SET_REAL_IP_FROM="127.0.0.1"
 
 # Add Build Dependencies | # Configure & Install Extension | # Remove Build Dependencies
-RUN apk update && apk add --no-cache --virtual .build-deps \
+RUN apk update \
+    && apk add --no-cache tzdata \
+    && apk add --no-cache --virtual .build-deps \
       zlib-dev \
       libjpeg-turbo-dev \
       libpng-dev \
@@ -59,9 +63,9 @@ RUN apk update && apk add --no-cache --virtual .build-deps \
     && docker-php-ext-configure zip \
     && docker-php-ext-configure ldap \
     && docker-php-ext-install opcache \
+      pdo \
       pdo_pgsql \
       pgsql \
-      pdo \
       sockets \
       intl \
       gd \
@@ -73,8 +77,8 @@ RUN apk update && apk add --no-cache --virtual .build-deps \
       ldap \
       exif \
     && docker-php-source delete \
-    && apk del .build-deps \
-    && apk add --no-cache libbz2 \
+    && apk del .build-deps
+RUN apk add --no-cache libbz2 \
       libpq \
       libpng \
       libldap \
@@ -86,7 +90,7 @@ RUN apk update && apk add --no-cache --virtual .build-deps \
       nginx
 
 RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then \
-      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.7.8 \
+      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.8.8 \
       && apk add --no-cache git make nodejs npm ; \
     fi
 
@@ -115,4 +119,4 @@ WORKDIR /var/www/html
 
 EXPOSE 80
 ENTRYPOINT ["sh", "/docker-entrypoint.sh"]
-CMD supervisord -c /etc/supervisord.conf
+CMD ["supervisord", "-c", "/etc/supervisord.conf"]

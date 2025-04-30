@@ -11,10 +11,10 @@ Default packages
 
 Build packages
 
-- Composer - `2.5.1`
-- NodeJs - `16.19.1`
+- Composer - `2.8.8`
+- NodeJs - `16.20.2`
 - Npm - `8.10.0`
-- GIt - `2.36.5`
+- GIt - `2.36.6`
 
 Php Modules
 
@@ -118,6 +118,12 @@ Docker images are pushed to Docker Hub through the docker push command. A single
 # Run
 
 The current environment variables that can be set by `--env` (_docker run --env VAR1=value1_):
+
+#### OS related
+
+- Timezone
+
+        TZ="Europe/Bucharest"
 
 #### LARAVEL related
 
