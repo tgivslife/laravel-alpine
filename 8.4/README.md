@@ -1,4 +1,4 @@
-# 8.4 (8.4)
+# 8.4 (8.4.7)
 
 - [What's included](#whats-included)
 - [Build image](#build-image)
