@@ -1,5 +1,9 @@
 #!/bin/sh
 
+timestamp() {
+  date "+%Y-%m-%d %H:%M:%S"
+}
+
 #---------------------------------------------------------------------
 # configurations
 #---------------------------------------------------------------------
@@ -16,5 +20,6 @@ function php() {
 # run configurations
 #---------------------------------------------------------------------
 
-echo "Configure php"
+echo "$(timestamp) Configure php started"
 php
+echo "$(timestamp) Configure php finished"

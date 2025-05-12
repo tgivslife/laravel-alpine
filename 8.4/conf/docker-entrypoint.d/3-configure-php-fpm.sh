@@ -1,5 +1,9 @@
 #!/bin/sh
 
+timestamp() {
+  date "+%Y-%m-%d %H:%M:%S"
+}
+
 #---------------------------------------------------------------------
 # configurations
 #---------------------------------------------------------------------
@@ -12,5 +16,6 @@ function php_fpm() {
   sed -i -e 's|pm.max_spare_servers =.*$|pm.max_spare_servers = '"${PHP_FPM_PM_MAX_SPARE_SERVERS}"'|g' "$PHP_FPM_CONF_FILE"
 }
 
-echo "Configure php-fpm"
+echo "$(timestamp) Configure php-fpm started"
 php_fpm
+echo "$(timestamp) Configure php-fpm finished"

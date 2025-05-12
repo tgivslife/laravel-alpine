@@ -93,13 +93,13 @@ docker build --no-cache -t stsdockerhub/php:8.4.7-laravel-alpine3.21-build --bui
 __Image used for running laravel application__
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.3.20-laravel-alpine3.21 -f 8.3/Dockerfile ./8.3
+docker build --no-cache -t stsdockerhub/php:8.4.7-laravel-alpine3.21 -f 8.4/Dockerfile ./8.4
 ```
 
 The current arguments that can be set by `--build-args` (_docker build --build-arg VAR1=value1_):
 
 - Alpine version: `--build-arg ALPINE_VERSION=3.21` , default is __3.21__
-- Php version: `--build-arg PHP_VERSION=8.3.20` , default is __8.3.20__
+- Php version: `--build-arg PHP_VERSION=8.4.7` , default is __8.4.7__
 - Docker registry: `--build-arg REGISTRY=repos.stsnet.ro` , default __docker.io__
 - Include packages used for build: `--build-arg INCLUDE_BUILD_TOOLS=false` , default is __false__
 
@@ -162,7 +162,7 @@ The current environment variables that can be set by `--env` (_docker run --env 
 
 - The amount of memory used to store interned strings, in megabytes.
 
-        PHP_OPCACHE_INTERNED_STRINGS_BUFFER="64"
+        PHP_OPCACHE_INTERNED_STRINGS_BUFFER="128"
 
 - The maximum number of keys (and therefore scripts) in the OPcache hash table.
   The actual value used will be the first number in the set of prime numbers {
@@ -183,12 +183,6 @@ The current environment variables that can be set by `--env` (_docker run --env 
   or by restarting the Web server for changes to the filesystem to take effect.
 
         PHP_OPCACHE_VALIDATE_TIMESTAMPS="0"
-
-- How often to check script timestamps for updates, in seconds.
-  0 will result in OPcache checking for updates on every request.
-  This configuration directive is ignored if opcache.validate_timestamps is disabled.
-
-        PHP_OPCACHE_REVALIDATE_FREQUENCY="60"
 
 - If disabled, all documentation comments will be discarded from the opcode cache to reduce the size of the optimised code.
   Disabling this configuration directive may break applications and frameworks that rely on comment parsing for annotations, including Doctrine, Zend Framework 2 and PHPUnit.
@@ -244,8 +238,8 @@ Docker images are pushed to Docker Hub through the docker push command. A single
 2. Push your newly tagged private images to your Docker namespace
 
    ```
-   docker push stsdockerhub/php:8.3.11-laravel-alpine3.20-build
-   docker push stsdockerhub/php:8.3.11-laravel-alpine3.20
+   docker push stsdockerhub/php:8.4.7-laravel-alpine3.21-build
+   docker push stsdockerhub/php:8.4.7-laravel-alpine3.21
    ```
 
 ### Example deploy app
@@ -256,7 +250,7 @@ Example of dockerfile for deploying laravel application using docker containers.
 
 ```dockerfile
 ARG REGISTRY=docker.io/stsdockerhub
-ARG LARAVEL_ALPINE_VERSION=8.3.20-laravel-alpine3.21
+ARG LARAVEL_ALPINE_VERSION=8.4.7-laravel-alpine3.21
 
 FROM ${REGISTRY}/php:${LARAVEL_ALPINE_VERSION}-build as build-container
 

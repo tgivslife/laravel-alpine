@@ -1,5 +1,9 @@
 #!/bin/sh
 
+timestamp() {
+  date "+%Y-%m-%d %H:%M:%S"
+}
+
 #---------------------------------------------------------------------
 # configurations
 #---------------------------------------------------------------------
@@ -17,5 +21,6 @@ function php_opcache() {
   sed -i -e 's|opcache.save_comments=.*$|opcache.save_comments='"${PHP_OPCACHE_SAVE_COMMENTS}"'|g' "$PHP_INI_OPCACHE_FILE"
 }
 
-echo "Configure php opcache"
+echo "$(timestamp) Configure php opcache started"
 php_opcache
+echo "$(timestamp) Configure php opcache finished"
