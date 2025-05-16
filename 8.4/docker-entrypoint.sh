@@ -4,29 +4,35 @@ timestamp() {
   date "+%Y-%m-%d %H:%M:%S"
 }
 
-if /usr/bin/find "/docker-entrypoint.d/" -mindepth 1 -maxdepth 1 -type f -print -quit 2>/dev/null | read v; then
-    echo "$(timestamp) /docker-entrypoint.d/ is not empty, will attempt to perform configuration"
+log() {
+  echo "$(timestamp) $*"
+}
 
-    echo "$(timestamp) Looking for shell scripts in /docker-entrypoint.d/"
+if /usr/bin/find "/docker-entrypoint.d/" -mindepth 1 -maxdepth 1 -type f -print -quit 2>/dev/null | read v; then
+    log "/docker-entrypoint.d/ is not empty, will attempt to perform configuration"
+
+    log "Looking for shell scripts in /docker-entrypoint.d/"
     find "/docker-entrypoint.d/" -follow -type f -print | sort -V | while read -r f; do
         case "$f" in
             *.sh)
                 if [ -x "$f" ]; then
-                    echo "$(timestamp) Launching $f";
+                    log "Launching $f";
                     "$f"
                 else
                     # warn on shell scripts without exec bit
-                    echo "$(timestamp) Ignoring $f, not executable";
+                    log "Ignoring $f, not executable";
                 fi
                 ;;
-            *) echo "$(timestamp) Ignoring $f";;
+            *)
+                log "Ignoring $f"
+                ;;
         esac
     done
 
-    echo "$(timestamp) Configuration complete; ready for start up"
+    log "Configuration complete; ready for start up"
 else
-    echo "$(timestamp) No files found in /docker-entrypoint.d/, skipping configuration"
+    log "No files found in /docker-entrypoint.d/, skipping configuration"
 fi
 
-echo "$(timestamp) Running CMD: $@"
+log "Running CMD: $@"
 exec "$@"
