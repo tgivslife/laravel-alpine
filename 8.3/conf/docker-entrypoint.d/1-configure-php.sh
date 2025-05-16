@@ -1,10 +1,18 @@
 #!/bin/sh
 
+timestamp() {
+  date "+%Y-%m-%d %H:%M:%S"
+}
+
+log() {
+  echo "$(timestamp) $*"
+}
+
 #---------------------------------------------------------------------
 # configurations
 #---------------------------------------------------------------------
 
-function php() {
+php() {
   PHP_INI_FILE="/usr/local/etc/php/php.ini"
   sed -i -e 's|max_execution_time =.*$|max_execution_time = '"${PHP_MAX_EXECUTION_TIME}"'|g' "$PHP_INI_FILE"
   sed -i -e 's|memory_limit =.*$|memory_limit = '"${PHP_MEMORY_LIMIT}"'|g' "$PHP_INI_FILE"
@@ -16,5 +24,6 @@ function php() {
 # run configurations
 #---------------------------------------------------------------------
 
-echo "Configure php"
+log "Configure php started"
 php
+log "Configure php finished"
