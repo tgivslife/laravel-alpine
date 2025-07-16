@@ -10,17 +10,17 @@
 
 Default packages
 
-- PHP-FPM - `8.4.7`
-- Nginx - `1.26.3`
+- PHP-FPM - `8.4.10`
+- Nginx - `1.28.0`
 - Supervisor - `4.2.5`
 - CRON - `1.37.0`
 
 Build packages
 
-- Composer - `2.8.8`
-- NodeJs - `22.13.1`
-- Npm - `10.9.1`
-- Git - `2.47.2`
+- Composer - `2.8.10`
+- NodeJs - `22.16.0`
+- Npm - `11.3.0`
+- Git - `2.49.1`
 
 _Php Modules_
 
@@ -87,19 +87,19 @@ When building images the following naming convention is required `[php version]`
 __Image used for building laravel application__
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.4.7-laravel-alpine3.21-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.4/Dockerfile ./8.4
+docker build --no-cache -t stsdockerhub/php:8.4.10-laravel-alpine3.22-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.4/Dockerfile ./8.4
 ```
 
 __Image used for running laravel application__
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.4.7-laravel-alpine3.21 -f 8.4/Dockerfile ./8.4
+docker build --no-cache -t stsdockerhub/php:8.4.10-laravel-alpine3.22 -f 8.4/Dockerfile ./8.4
 ```
 
 The current arguments that can be set by `--build-args` (_docker build --build-arg VAR1=value1_):
 
-- Alpine version: `--build-arg ALPINE_VERSION=3.21` , default is __3.21__
-- Php version: `--build-arg PHP_VERSION=8.4.7` , default is __8.4.7__
+- Alpine version: `--build-arg ALPINE_VERSION=3.21` , default is __3.22__
+- Php version: `--build-arg PHP_VERSION=8.4.7` , default is __8.4.10__
 - Docker registry: `--build-arg REGISTRY=repos.stsnet.ro` , default __docker.io__
 - Include packages used for build: `--build-arg INCLUDE_BUILD_TOOLS=false` , default is __false__
 

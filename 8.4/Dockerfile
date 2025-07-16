@@ -1,5 +1,5 @@
-ARG ALPINE_VERSION=3.21
-ARG PHP_VERSION=8.4.7
+ARG ALPINE_VERSION=3.22
+ARG PHP_VERSION=8.4.10
 ARG REGISTRY=docker.io
 ARG INCLUDE_BUILD_TOOLS=false
 
@@ -87,7 +87,7 @@ RUN apk add --no-cache libbz2 \
       nginx
 
 RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then \
-      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.8.8 \
+      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.8.10 \
       && apk add --no-cache git make nodejs npm ; \
     fi
 
