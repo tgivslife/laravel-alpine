@@ -1,5 +1,5 @@
-ARG ALPINE_VERSION=3.21
-ARG PHP_VERSION=8.3.21
+ARG ALPINE_VERSION=3.24
+ARG PHP_VERSION=8.3.32
 ARG REGISTRY=docker.io
 ARG INCLUDE_BUILD_TOOLS=false
 
@@ -33,11 +33,12 @@ ENV TZ="Europe/Bucharest" \
     \
     NGINX_FASTCGI_READ_TIMEOUT="60s" \
     NGINX_CLIENT_MAX_BODY_SIZE="50m" \
-    NGINX_SET_REAL_IP_FROM="127.0.0.1"
+    NGINX_SET_REAL_IP_FROM="127.0.0.1" \
+    NGINX_WORKER_RLIMIT_NOFILE="65535" \
+    NGINX_WORKER_CONNECTIONS="4096"
 
 # Add Build Dependencies | # Configure & Install Extension | # Remove Build Dependencies
-RUN apk update \
-    && apk add --no-cache tzdata \
+RUN apk add --no-cache tzdata \
     && apk add --no-cache --virtual .build-deps \
       zlib-dev \
       libjpeg-turbo-dev \
@@ -54,7 +55,7 @@ RUN apk update \
       linux-headers \
     && docker-php-ext-configure opcache --enable-opcache \
     && docker-php-ext-configure gd --with-jpeg=/usr/include/ --with-freetype=/usr/include/ \
-    && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
+    && docker-php-ext-configure pgsql --with-pgsql=/usr/local/pgsql \
     && docker-php-ext-configure zip \
     && pecl install -o -f redis \
     && rm -rf /tmp/pear \
@@ -87,7 +88,7 @@ RUN apk add --no-cache libbz2 \
       nginx
 
 RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then \
-      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.8.8 \
+      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.10.2 \
       && apk add --no-cache git make nodejs npm ; \
     fi
 
@@ -115,5 +116,10 @@ RUN chmod +x /docker-entrypoint.d/* \
 WORKDIR /var/www/html
 
 EXPOSE 80
-ENTRYPOINT ["sh", "/docker-entrypoint.sh"]
+
+# Probes nginx -> unix socket -> php-fpm in one request, so it fails if any link in the chain is down.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD wget -qO- http://127.0.0.1/ping || exit 1
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["supervisord", "-c", "/etc/supervisord.conf"]

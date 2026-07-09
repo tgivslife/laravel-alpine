@@ -1,5 +1,9 @@
 #!/bin/sh
 
+# Fail fast: if any configuration script fails, abort startup instead of
+# launching services with incomplete configuration.
+set -e
+
 timestamp() {
   date "+%Y-%m-%d %H:%M:%S"
 }

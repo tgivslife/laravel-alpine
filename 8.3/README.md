@@ -10,17 +10,16 @@
 
 Default packages
 
-- PHP-FPM - `8.3.21`
-- Nginx - `1.26.3`
-- Supervisor - `4.2.5`
-- CRON - `1.37.0`
+- PHP-FPM - `8.3.32`
+- Nginx - `1.30.3`
+- Supervisor - `4.3.0`
 
 Build packages
 
-- Composer - `2.8.8`
-- NodeJs - `22.13.1`
-- Npm - `10.9.1`
-- Git - `2.47.2`
+- Composer - `2.10.2`
+- NodeJs - `24.17.0`
+- Npm - `11.12.1`
+- Git - `2.54.0`
 
 _Php Modules_
 
@@ -78,7 +77,7 @@ zlib
 Zend OPcache
 ```
 
-The processes (cron, php-fpm, nginx, horizon) are started and managed by supervisor
+The processes (php-fpm, nginx, scheduler, horizon) are started and managed by supervisor
 
 ### Build image
 
@@ -87,19 +86,19 @@ When building images the following naming convention is required `[php version]`
 __Image used for building laravel application__
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.3.21-laravel-alpine3.21-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.3/Dockerfile ./8.3
+docker build --no-cache -t stsdockerhub/php:8.3.32-laravel-alpine3.24-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.3/Dockerfile ./8.3
 ```
 
 __Image used for running laravel application__
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.3.21-laravel-alpine3.21 -f 8.3/Dockerfile ./8.3
+docker build --no-cache -t stsdockerhub/php:8.3.32-laravel-alpine3.24 -f 8.3/Dockerfile ./8.3
 ```
 
 The current arguments that can be set by `--build-args` (_docker build --build-arg VAR1=value1_):
 
-- Alpine version: `--build-arg ALPINE_VERSION=3.21` , default is __3.21__
-- Php version: `--build-arg PHP_VERSION=8.3.21` , default is __8.3.21__
+- Alpine version: `--build-arg ALPINE_VERSION=3.24` , default is __3.24__
+- Php version: `--build-arg PHP_VERSION=8.3.32` , default is __8.3.32__
 - Docker registry: `--build-arg REGISTRY=repos.stsnet.ro` , default __docker.io__
 - Include packages used for build: `--build-arg INCLUDE_BUILD_TOOLS=false` , default is __false__
 
@@ -118,7 +117,8 @@ The current environment variables that can be set by `--env` (_docker run --env 
 - Laravel's command scheduler offers a fresh approach to managing scheduled tasks on your server.
   The scheduler allows you to fluently and expressively define your command schedule within your Laravel
   application itself.
-  When using the scheduler, only a single cron entry is needed on your server.
+  When enabled, the scheduler runs as a supervisor-managed `php artisan schedule:work` process,
+  so its output is visible in the container logs.
 
         LARAVEL_SCHEDULER_ENABLE="1"
 
@@ -227,6 +227,15 @@ The current environment variables that can be set by `--env` (_docker run --env 
 
         NGINX_SET_REAL_IP_FROM="127.0.0.1"
 
+- Raises the per-worker open file descriptor limit above worker_connections,
+  since each connection can use more than one fd (client + fastcgi upstream).
+
+        NGINX_WORKER_RLIMIT_NOFILE="65535"
+
+- The maximum number of simultaneous connections that can be opened by a worker process.
+
+        NGINX_WORKER_CONNECTIONS="4096"
+
 ### Publish to [hub.docker.com](https://hub.docker.com/)
 
 Docker Hub repositories allow you to share container images with your team, customers, or the Docker community at large.
@@ -238,19 +247,19 @@ Docker images are pushed to Docker Hub through the docker push command. A single
 2. Push your newly tagged private images to your Docker namespace
 
    ```
-   docker push stsdockerhub/php:8.3.21-laravel-alpine3.21-build
-   docker push stsdockerhub/php:8.3.21-laravel-alpine3.21
+   docker push stsdockerhub/php:8.3.32-laravel-alpine3.24-build
+   docker push stsdockerhub/php:8.3.32-laravel-alpine3.24
    ```
    
 ### Example deploy app
 
-The container image serves the laravel application from `/var/www/html` through nginx. The application is afterwards accessible on port `80`
+The container image serves the Laravel application from `/var/www/html` through nginx. The application is afterwards accessible on port `80`
 
-Example of dockerfile for deploying laravel application using docker containers.
+Example of dockerfile for deploying Laravel application using docker containers.
 
 ```dockerfile
 ARG REGISTRY=docker.io/stsdockerhub
-ARG LARAVEL_ALPINE_VERSION=8.3.21-laravel-alpine3.21
+ARG LARAVEL_ALPINE_VERSION=8.3.32-laravel-alpine3.24
 
 FROM ${REGISTRY}/php:${LARAVEL_ALPINE_VERSION}-build as build-container
 

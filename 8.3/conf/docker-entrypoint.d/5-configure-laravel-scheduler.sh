@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Fail fast: a failed step must abort container startup instead of booting misconfigured.
+set -e
+
 timestamp() {
   date "+%Y-%m-%d %H:%M:%S"
 }
@@ -13,12 +16,23 @@ log() {
 #---------------------------------------------------------------------
 
 laravel_scheduler() {
+  CONFIG_PATH="/etc/supervisor.d/scheduler.ini"
+  DISABLED_CONFIG_PATH="/etc/supervisor.d/scheduler.ini.disabled"
+
   if [ "${LARAVEL_SCHEDULER_ENABLE}" = "1" ]; then
-    echo "* * * * * php /var/www/html/artisan schedule:run 2>&1" > /etc/crontabs/www-data
-    log "Enabled laravel scheduler"
+    if [ -f "${DISABLED_CONFIG_PATH}" ]; then
+      log "Enabling Laravel scheduler"
+      mv "${DISABLED_CONFIG_PATH}" "${CONFIG_PATH}"
+    else
+      log "Laravel scheduler already enabled or config missing"
+    fi
   else
-    echo "#* * * * * php /var/www/html/artisan schedule:run 2>&1" > /etc/crontabs/www-data
-    log "Disabled laravel scheduler"
+    if [ -f "${CONFIG_PATH}" ]; then
+      log "Disabling Laravel scheduler"
+      mv "${CONFIG_PATH}" "${DISABLED_CONFIG_PATH}"
+    else
+      log "Laravel scheduler already disabled or config missing"
+    fi
   fi
 }
 

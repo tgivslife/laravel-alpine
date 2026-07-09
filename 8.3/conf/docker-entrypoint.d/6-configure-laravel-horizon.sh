@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Fail fast: a failed step must abort container startup instead of booting misconfigured.
+set -e
+
 timestamp() {
   date "+%Y-%m-%d %H:%M:%S"
 }
