@@ -37,8 +37,18 @@ ENV TZ="Europe/Bucharest" \
     NGINX_WORKER_RLIMIT_NOFILE="65535" \
     NGINX_WORKER_CONNECTIONS="4096"
 
-# Add Build Dependencies | # Configure & Install Extension | # Remove Build Dependencies
+# Add Build Dependencies | # Configure & Install Extension | # Remove Build Dependencies | # Add runtime deps
 RUN apk add --no-cache tzdata \
+      libbz2 \
+      libpq \
+      libpng \
+      libjpeg-turbo \
+      freetype \
+      icu-libs \
+      libzip \
+      supervisor \
+      nginx \
+    && addgroup nginx www-data \
     && apk add --no-cache --virtual .build-deps \
       zlib-dev \
       libjpeg-turbo-dev \
@@ -77,15 +87,6 @@ RUN apk add --no-cache tzdata \
       exif \
     && docker-php-source delete \
     && apk del .build-deps
-RUN apk add --no-cache libbz2 \
-      libpq \
-      libpng \
-      libjpeg-turbo \
-      freetype \
-      icu-libs \
-      libzip \
-      supervisor \
-      nginx
 
 RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then \
       php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.10.2 \
@@ -100,18 +101,14 @@ COPY conf/php-fpm/www.conf /usr/local/etc/php-fpm.d/
 # Configure nginx
 COPY conf/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY conf/nginx/default.conf /etc/nginx/http.d/default.conf
-RUN addgroup nginx www-data
 
 # Configure supervisor
 COPY conf/supervisor/supervisord.conf /etc/supervisord.conf
 COPY conf/supervisor/supervisor.d /etc/supervisor.d
 
 # Configure entrypoint
-COPY conf/docker-entrypoint.d /docker-entrypoint.d/
-COPY docker-entrypoint.sh /
-
-RUN chmod +x /docker-entrypoint.d/* \
-    && chmod +x /docker-entrypoint.sh
+COPY --chmod=755 conf/docker-entrypoint.d /docker-entrypoint.d/
+COPY --chmod=755 docker-entrypoint.sh /
 
 WORKDIR /var/www/html
 
