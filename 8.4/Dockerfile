@@ -1,5 +1,5 @@
-ARG ALPINE_VERSION=3.22
-ARG PHP_VERSION=8.4.12
+ARG ALPINE_VERSION=3.24
+ARG PHP_VERSION=8.4.23
 ARG REGISTRY=docker.io
 ARG INCLUDE_BUILD_TOOLS=false
 
@@ -33,11 +33,22 @@ ENV TZ="Europe/Bucharest" \
     \
     NGINX_FASTCGI_READ_TIMEOUT="60s" \
     NGINX_CLIENT_MAX_BODY_SIZE="50m" \
-    NGINX_SET_REAL_IP_FROM="127.0.0.1"
+    NGINX_SET_REAL_IP_FROM="127.0.0.1" \
+    NGINX_WORKER_RLIMIT_NOFILE="65535" \
+    NGINX_WORKER_CONNECTIONS="4096"
 
-# Add Build Dependencies | # Configure & Install Extension | # Remove Build Dependencies
-RUN apk update \
-    && apk add --no-cache tzdata \
+# Add Build Dependencies | # Configure & Install Extension | # Remove Build Dependencies | # Add runtime deps
+RUN apk add --no-cache tzdata \
+      libbz2 \
+      libpq \
+      libpng \
+      libjpeg-turbo \
+      freetype \
+      icu-libs \
+      libzip \
+      supervisor \
+      nginx \
+    && addgroup nginx www-data \
     && apk add --no-cache --virtual .build-deps \
       zlib-dev \
       libjpeg-turbo-dev \
@@ -54,7 +65,7 @@ RUN apk update \
       linux-headers \
     && docker-php-ext-configure opcache --enable-opcache \
     && docker-php-ext-configure gd --with-jpeg=/usr/include/ --with-freetype=/usr/include/ \
-    && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
+    && docker-php-ext-configure pgsql --with-pgsql=/usr/local/pgsql \
     && docker-php-ext-configure zip \
     && pecl install -o -f redis \
     && rm -rf /tmp/pear \
@@ -76,18 +87,9 @@ RUN apk update \
       exif \
     && docker-php-source delete \
     && apk del .build-deps
-RUN apk add --no-cache libbz2 \
-      libpq \
-      libpng \
-      libjpeg-turbo \
-      freetype \
-      icu-libs \
-      libzip \
-      supervisor \
-      nginx
 
 RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then \
-      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.8.11 \
+      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.10.2 \
       && apk add --no-cache git make nodejs npm ; \
     fi
 
@@ -99,21 +101,22 @@ COPY conf/php-fpm/www.conf /usr/local/etc/php-fpm.d/
 # Configure nginx
 COPY conf/nginx/nginx.conf /etc/nginx/nginx.conf
 COPY conf/nginx/default.conf /etc/nginx/http.d/default.conf
-RUN addgroup nginx www-data
 
 # Configure supervisor
 COPY conf/supervisor/supervisord.conf /etc/supervisord.conf
 COPY conf/supervisor/supervisor.d /etc/supervisor.d
 
 # Configure entrypoint
-COPY conf/docker-entrypoint.d /docker-entrypoint.d/
-COPY docker-entrypoint.sh /
-
-RUN chmod +x /docker-entrypoint.d/* \
-    && chmod +x /docker-entrypoint.sh
+COPY --chmod=755 conf/docker-entrypoint.d /docker-entrypoint.d/
+COPY --chmod=755 docker-entrypoint.sh /
 
 WORKDIR /var/www/html
 
 EXPOSE 80
-ENTRYPOINT ["sh", "/docker-entrypoint.sh"]
+
+# Probes nginx -> unix socket -> php-fpm in one request, so it fails if any link in the chain is down.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD wget -qO- http://127.0.0.1/ping || exit 1
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["supervisord", "-c", "/etc/supervisord.conf"]

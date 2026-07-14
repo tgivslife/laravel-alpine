@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Fail fast: a failed sed must abort container startup instead of booting with wrong config.
+set -e
+
 timestamp() {
   date "+%Y-%m-%d %H:%M:%S"
 }
