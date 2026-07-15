@@ -25,8 +25,6 @@
 - [8.4](8.4/README.md)
 - [8.3](8.3/README.md)
 - [8.2](8.2/README.md)
-- [8.1](8.1/README.md)
-- [8.0](8.0/README.md)
 - [7.4](7.4/README.md)
 
 ### Available tags
@@ -68,5 +66,3 @@ Tags published on [Docker Hub](https://hub.docker.com/r/stsdockerhub/php/tags), 
 #### PHP 7.4
 
 - `7.4.33-laravel-alpine3.16` / `7.4.33-laravel-alpine3.16-build`
-
-> No published tags currently exist on Docker Hub for 8.0 or 8.1.
