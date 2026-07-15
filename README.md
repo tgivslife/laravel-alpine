@@ -33,7 +33,7 @@ Tags published on [Docker Hub](https://hub.docker.com/r/stsdockerhub/php/tags), 
 
 #### PHP 8.5
 
-- `8.5.8-laravel-alpine3.24-build`
+- `8.5.8-laravel-alpine3.24-build` / `8.5.8-laravel-alpine3.24`
 
 #### PHP 8.4
 
