@@ -258,12 +258,71 @@ RUN set -eux; \
 	} > "$PHP_INI_DIR/conf.d/docker-fpm.ini"
 
 #
-# prune build-only artifacts before shipping /usr/local; kept out of "builder" itself
+# extension build stage: compiles the extra extensions shipped in the final image
+# (the builder still has all -dev packages from the PHP build itself installed)
+#
+
+FROM builder AS extensions
+
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		libbz2-dev \
+		libfreetype-dev \
+		libicu-dev \
+		libjpeg-dev \
+		libpng-dev \
+		libpq-dev \
+		libzip-dev \
+	; \
+	\
+	docker-php-ext-configure gd --with-freetype --with-jpeg; \
+	docker-php-ext-install -j "$(nproc)" \
+		bcmath \
+		bz2 \
+		exif \
+		gd \
+		intl \
+		mysqli \
+		pcntl \
+		pdo_mysql \
+		pdo_pgsql \
+		pgsql \
+		sockets \
+		zip \
+	; \
+	\
+	pecl install -o -f redis; \
+	docker-php-ext-enable redis; \
+	rm -rf /tmp/pear ~/.pearrc; \
+# pecl doesn't strip its build (docker-php-ext-install does)
+	find "$(php -r 'echo ini_get("extension_dir");')" \
+		-type f \
+		-name '*.so' \
+		-exec sh -euxc 'strip --strip-all "$@" || :' -- '{}' + \
+	; \
+	\
+# regenerate the runtime package list now that the extensions link against more libraries
+	find /usr/local -type f -executable -exec ldd '{}' ';' \
+		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
+		| sort -u \
+		| xargs -rt dpkg-query --search \
+		| awk 'sub(":$", "", $1) { print $1 }' \
+		| sort -u \
+		| tee /usr/src/php-runtime-deps.txt \
+	; \
+	\
+# smoke test
+	php --version; \
+	php -m
+
+#
+# prune build-only artifacts before shipping /usr/local; kept out of "builder"/"extensions"
 # so `--target builder` still has the full toolchain (headers, phpize, pecl) for
 # images that need to compile extensions
 #
 
-FROM builder AS pruned
+FROM extensions AS pruned
 
 RUN set -eux; \
 # PEAR/PECL runtime, phpize build files, docs — keep only the extensions dir
@@ -311,7 +370,7 @@ ENV PHP_VERSION=8.5.8
 # compiled PHP + entrypoint + fpm config (all live under /usr/local)
 COPY --from=pruned /usr/local /usr/local
 
-RUN --mount=type=bind,from=builder,source=/usr/src/php-runtime-deps.txt,target=/tmp/php-runtime-deps.txt \
+RUN --mount=type=bind,from=extensions,source=/usr/src/php-runtime-deps.txt,target=/tmp/php-runtime-deps.txt \
 	set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
@@ -331,6 +390,12 @@ RUN --mount=type=bind,from=builder,source=/usr/src/php-runtime-deps.txt,target=/
 # (extension load failures only warn on stderr, so assert stderr is empty)
 	err="$(php --version 3>&1 1>&2 2>&3)"; \
 	[ -z "$err" ]; \
+	for ext in \
+		bcmath bz2 curl exif gd intl mbstring mysqli pcntl \
+		pdo_mysql pdo_pgsql pgsql redis sockets sodium zip \
+	; do \
+		php -r 'extension_loaded($argv[1]) or exit(1);' "$ext"; \
+	done; \
 	php -m
 
 ENTRYPOINT ["docker-php-entrypoint"]
