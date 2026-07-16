@@ -1,10 +1,10 @@
 #
-# NOTE: THIS DOCKERFILE IS GENERATED VIA "apply-templates.sh"
-#
-# PLEASE DO NOT EDIT IT DIRECTLY.
+# Based on the official docker-library/php template (generated via "apply-templates.sh"),
+# restructured as a multi-stage build: PHP is compiled in the "builder" stage and only
+# /usr/local, /usr/src and the required runtime libraries are shipped in the final image.
 #
 
-FROM debian:trixie-20260713-slim
+FROM debian:trixie-20260713-slim AS builder
 
 # prevent Debian's PHP packages from being installed
 # https://github.com/docker-library/php/pull/542
@@ -17,7 +17,7 @@ RUN set -eux; \
 
 # dependencies required for running "phpize"
 # (see persistent deps below)
-ENV PHPIZE_DEPS \
+ENV PHPIZE_DEPS="\
 		autoconf \
 		dpkg-dev \
 		file \
@@ -26,7 +26,7 @@ ENV PHPIZE_DEPS \
 		libc-dev \
 		make \
 		pkg-config \
-		re2c
+		re2c"
 
 # persistent / runtime deps
 RUN set -eux; \
@@ -39,14 +39,9 @@ RUN set -eux; \
 	; \
 	apt-get dist-clean
 
-ENV PHP_INI_DIR /usr/local/etc/php
+ENV PHP_INI_DIR=/usr/local/etc/php
 RUN set -eux; \
-	mkdir -p "$PHP_INI_DIR/conf.d"; \
-# allow running as an arbitrary user (https://github.com/docker-library/php/issues/743)
-	[ ! -d /var/www/html ]; \
-	mkdir -p /var/www/html; \
-	chown www-data:www-data /var/www/html; \
-	chmod 1777 /var/www/html
+	mkdir -p "$PHP_INI_DIR/conf.d"
 
 # Apply stack smash protection to functions using local buffers and alloca()
 # Make PHP's main executable position-independent (improves ASLR security mechanism, and has no performance impact on x86_64)
@@ -58,9 +53,9 @@ ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
-ENV GPG_KEYS 1198C0117593497A5EC5C199286AF1F9897469DC 49D9AF6BC72A80D6691719C8AA23F5BE9C7097D4 D95C03BC702BE9515344AE3374E44BC9067701A5
+ENV GPG_KEYS="1198C0117593497A5EC5C199286AF1F9897469DC 49D9AF6BC72A80D6691719C8AA23F5BE9C7097D4 D95C03BC702BE9515344AE3374E44BC9067701A5"
 
-ENV PHP_VERSION 8.5.8
+ENV PHP_VERSION=8.5.8
 ENV PHP_URL="https://www.php.net/distributions/php-8.5.8.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-8.5.8.tar.xz.asc"
 ENV PHP_SHA256="58910198d19e873048fe87cdfe16bc790025417ede3d1651bfa1c4b533d573f2"
 
@@ -97,7 +92,6 @@ COPY docker-php-source /usr/local/bin/
 
 RUN set -eux; \
 	\
-	savedAptMark="$(apt-mark showmanual)"; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		libargon2-dev \
@@ -194,9 +188,9 @@ RUN set -eux; \
 	cd /; \
 	docker-php-source delete; \
 	\
-# reset apt-mark's "manual" list so that "purge --auto-remove" will remove all build dependencies
-	apt-mark auto '.*' > /dev/null; \
-	[ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; \
+# record the distro packages that provide the shared libraries PHP links against;
+# the final stage installs exactly this list (same technique the official image uses
+# to decide which packages survive "apt-get purge --auto-remove")
 	find /usr/local -type f -executable -exec ldd '{}' ';' \
 		| awk '/=>/ { so = $(NF-1); if (index(so, "/usr/local/") == 1) { next }; gsub("^/(usr/)?", "", so); printf "*%s\n", so }' \
 		| sort -u \
@@ -204,10 +198,8 @@ RUN set -eux; \
 # https://manpages.debian.org/trixie/dpkg/dpkg-query.1.en.html#S (we ignore diversions and it'll be really unusual for more than one package to provide any given .so file)
 		| awk 'sub(":$", "", $1) { print $1 }' \
 		| sort -u \
-		| xargs -r apt-mark manual \
+		| tee /usr/src/php-runtime-deps.txt \
 	; \
-	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
-	apt-get dist-clean; \
 	\
 # update pecl channel definitions https://github.com/docker-library/php/issues/443
 	pecl update-channels; \
@@ -220,9 +212,6 @@ COPY docker-php-ext-* docker-php-entrypoint /usr/local/bin/
 
 # sodium was built as a shared module (so that it can be replaced later if so desired), so let's enable it too (https://github.com/docker-library/php/issues/598)
 RUN docker-php-ext-enable sodium
-
-ENTRYPOINT ["docker-php-entrypoint"]
-WORKDIR /var/www/html
 
 RUN set -eux; \
 	cd "${PHP_INI_DIR%/php}"; \
@@ -266,6 +255,77 @@ RUN set -eux; \
 		echo '; https://github.com/docker-library/php/issues/878#issuecomment-938595965'; \
 		echo 'fastcgi.logging = Off'; \
 	} > "$PHP_INI_DIR/conf.d/docker-fpm.ini"
+
+#
+# runtime image: fresh base + compiled PHP + only the shared libraries it needs
+#
+
+FROM debian:trixie-20260713-slim
+
+# prevent Debian's PHP packages from being installed
+# https://github.com/docker-library/php/pull/542
+RUN set -eux; \
+	{ \
+		echo 'Package: php*'; \
+		echo 'Pin: release *'; \
+		echo 'Pin-Priority: -1'; \
+	} > /etc/apt/preferences.d/no-debian-php
+
+# dependencies required for running "phpize"
+# (not installed here — derived images that compile extensions must
+#  "apt-get install -y --no-install-recommends $PHPIZE_DEPS" first and purge them in the same layer)
+ENV PHPIZE_DEPS="\
+		autoconf \
+		dpkg-dev \
+		file \
+		g++ \
+		gcc \
+		libc-dev \
+		make \
+		pkg-config \
+		re2c"
+
+ENV PHP_INI_DIR=/usr/local/etc/php
+
+ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
+ENV PHP_CPPFLAGS="$PHP_CFLAGS"
+ENV PHP_LDFLAGS="-Wl,-O1 -pie"
+
+ENV GPG_KEYS="1198C0117593497A5EC5C199286AF1F9897469DC 49D9AF6BC72A80D6691719C8AA23F5BE9C7097D4 D95C03BC702BE9515344AE3374E44BC9067701A5"
+
+ENV PHP_VERSION=8.5.8
+ENV PHP_URL="https://www.php.net/distributions/php-8.5.8.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-8.5.8.tar.xz.asc"
+ENV PHP_SHA256="58910198d19e873048fe87cdfe16bc790025417ede3d1651bfa1c4b533d573f2"
+
+# compiled PHP + helper scripts + fpm config (all live under /usr/local),
+# and the pristine source tarball so "docker-php-ext-install" / "docker-php-source" keep working downstream
+COPY --from=builder /usr/local /usr/local
+COPY --from=builder /usr/src /usr/src
+
+RUN set -eux; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		ca-certificates \
+		curl \
+		xz-utils \
+		$(cat /usr/src/php-runtime-deps.txt) \
+	; \
+	apt-get dist-clean; \
+	\
+# allow running as an arbitrary user (https://github.com/docker-library/php/issues/743)
+	[ ! -d /var/www/html ]; \
+	mkdir -p /var/www/html; \
+	chown www-data:www-data /var/www/html; \
+	chmod 1777 /var/www/html; \
+	\
+# smoke test: fails if any shared library dependency is missing
+# (extension load failures only warn on stderr, so assert stderr is empty)
+	err="$(php --version 3>&1 1>&2 2>&3)"; \
+	[ -z "$err" ]; \
+	php -m
+
+ENTRYPOINT ["docker-php-entrypoint"]
+WORKDIR /var/www/html
 
 # Override stop signal to stop process gracefully
 # https://github.com/php/php-src/blob/17baa87faddc2550def3ae7314236826bc1b1398/sapi/fpm/php-fpm.8.in#L163
