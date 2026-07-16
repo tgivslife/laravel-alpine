@@ -1,7 +1,8 @@
 #
 # Based on the official docker-library/php template (generated via "apply-templates.sh"),
-# restructured as a multi-stage build: PHP is compiled in the "builder" stage and only
-# /usr/local, /usr/src and the required runtime libraries are shipped in the final image.
+# restructured as a multi-stage build: PHP is compiled in the "builder" stage, build-only
+# artifacts (headers, pear/pecl, phpize, source tarball) are pruned, and the final image
+# ships only /usr/local plus the runtime libraries the binaries actually link against.
 #
 
 FROM debian:trixie-20260713-slim AS builder
@@ -257,7 +258,40 @@ RUN set -eux; \
 	} > "$PHP_INI_DIR/conf.d/docker-fpm.ini"
 
 #
-# runtime image: fresh base + compiled PHP + only the shared libraries it needs
+# prune build-only artifacts before shipping /usr/local; kept out of "builder" itself
+# so `--target builder` still has the full toolchain (headers, phpize, pecl) for
+# images that need to compile extensions
+#
+
+FROM builder AS pruned
+
+RUN set -eux; \
+# PEAR/PECL runtime, phpize build files, docs — keep only the extensions dir
+	find /usr/local/lib/php -mindepth 1 -maxdepth 1 ! -name extensions -exec rm -rf '{}' +; \
+# C headers (only needed to compile extensions)
+	rm -rf /usr/local/include/php; \
+# man pages
+	rm -rf /usr/local/php; \
+# build/install tooling ("docker-php-ext-enable" needs readelf/binutils, absent at runtime anyway)
+	rm -f \
+		/usr/local/bin/pear \
+		/usr/local/bin/peardev \
+		/usr/local/bin/pecl \
+		/usr/local/bin/phar \
+		/usr/local/bin/phar.phar \
+		/usr/local/bin/phpize \
+		/usr/local/bin/php-config \
+		/usr/local/bin/docker-php-source \
+		/usr/local/bin/docker-php-ext-configure \
+		/usr/local/bin/docker-php-ext-install \
+		/usr/local/bin/docker-php-ext-enable \
+	; \
+	rm -f /usr/local/etc/pear.conf; \
+	php --version
+
+#
+# runtime image: fresh base + compiled PHP + only the shared libraries it needs;
+# static by design — no extension compiling in derived images (use `--target builder` for that)
 #
 
 FROM debian:trixie-20260713-slim
@@ -271,44 +305,19 @@ RUN set -eux; \
 		echo 'Pin-Priority: -1'; \
 	} > /etc/apt/preferences.d/no-debian-php
 
-# dependencies required for running "phpize"
-# (not installed here — derived images that compile extensions must
-#  "apt-get install -y --no-install-recommends $PHPIZE_DEPS" first and purge them in the same layer)
-ENV PHPIZE_DEPS="\
-		autoconf \
-		dpkg-dev \
-		file \
-		g++ \
-		gcc \
-		libc-dev \
-		make \
-		pkg-config \
-		re2c"
-
 ENV PHP_INI_DIR=/usr/local/etc/php
-
-ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64"
-ENV PHP_CPPFLAGS="$PHP_CFLAGS"
-ENV PHP_LDFLAGS="-Wl,-O1 -pie"
-
-ENV GPG_KEYS="1198C0117593497A5EC5C199286AF1F9897469DC 49D9AF6BC72A80D6691719C8AA23F5BE9C7097D4 D95C03BC702BE9515344AE3374E44BC9067701A5"
-
 ENV PHP_VERSION=8.5.8
-ENV PHP_URL="https://www.php.net/distributions/php-8.5.8.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-8.5.8.tar.xz.asc"
-ENV PHP_SHA256="58910198d19e873048fe87cdfe16bc790025417ede3d1651bfa1c4b533d573f2"
 
-# compiled PHP + helper scripts + fpm config (all live under /usr/local),
-# and the pristine source tarball so "docker-php-ext-install" / "docker-php-source" keep working downstream
-COPY --from=builder /usr/local /usr/local
-COPY --from=builder /usr/src /usr/src
+# compiled PHP + entrypoint + fpm config (all live under /usr/local)
+COPY --from=pruned /usr/local /usr/local
 
-RUN set -eux; \
+RUN --mount=type=bind,from=builder,source=/usr/src/php-runtime-deps.txt,target=/tmp/php-runtime-deps.txt \
+	set -eux; \
 	apt-get update; \
 	apt-get install -y --no-install-recommends \
 		ca-certificates \
 		curl \
-		xz-utils \
-		$(cat /usr/src/php-runtime-deps.txt) \
+		$(cat /tmp/php-runtime-deps.txt) \
 	; \
 	apt-get dist-clean; \
 	\
