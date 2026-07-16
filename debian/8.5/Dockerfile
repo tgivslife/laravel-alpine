@@ -398,12 +398,124 @@ RUN --mount=type=bind,from=extensions,source=/usr/src/php-runtime-deps.txt,targe
 	done; \
 	php -m
 
-ENTRYPOINT ["docker-php-entrypoint"]
+#
+# Laravel runtime: nginx + supervisor (+ optional build tools), mirroring the alpine image
+#
+
+ENV TZ="Europe/Bucharest" \
+    \
+    LARAVEL_SCHEDULER_ENABLE="1" \
+    LARAVEL_HORIZON_ENABLE="0" \
+    \
+    PHP_MAX_EXECUTION_TIME="60" \
+    PHP_MEMORY_LIMIT="128M" \
+    PHP_UPLOAD_MAX_FILESIZE="50M" \
+    PHP_POST_MAX_SIZE="50M" \
+    \
+    PHP_OPCACHE_ENABLE="1" \
+    PHP_OPCACHE_ENABLE_CLI="1" \
+    PHP_OPCACHE_MEMORY_CONSUMPTION="512" \
+    PHP_OPCACHE_INTERNED_STRINGS_BUFFER="128" \
+    PHP_OPCACHE_MAX_ACCELERATED_FILES="65406" \
+    PHP_OPCACHE_MAX_WASTED_PERCENTAGE="15" \
+    PHP_OPCACHE_VALIDATE_TIMESTAMPS="0" \
+    PHP_OPCACHE_SAVE_COMMENTS="1" \
+    \
+    PHP_FPM_PM_MAX_CHILDREN="50" \
+    PHP_FPM_PM_START_SERVERS="20" \
+    PHP_FPM_PM_MIN_SPARE_SERVER="10" \
+    PHP_FPM_PM_MAX_SPARE_SERVERS="30" \
+    \
+    NGINX_FASTCGI_READ_TIMEOUT="60s" \
+    NGINX_CLIENT_MAX_BODY_SIZE="50m" \
+    NGINX_SET_REAL_IP_FROM="127.0.0.1" \
+    NGINX_WORKER_RLIMIT_NOFILE="65535" \
+    NGINX_WORKER_CONNECTIONS="4096"
+
+# latest stable from nginx.org (Debian's own nginx package stays frozen at the release version);
+# bump when upstream publishes a new stable
+ENV NGINX_VERSION=1.30.4-1~trixie
+
+RUN set -eux; \
+	savedAptMark="$(apt-mark showmanual)"; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends gnupg; \
+	\
+	curl -fsSL https://nginx.org/keys/nginx_signing.key \
+		| gpg --dearmor -o /usr/share/keyrings/nginx-archive-keyring.gpg; \
+	export GNUPGHOME="$(mktemp -d)"; \
+	keys="$(gpg --dry-run --quiet --no-keyring --import --import-options import-show /usr/share/keyrings/nginx-archive-keyring.gpg)"; \
+	rm -rf "$GNUPGHOME"; unset GNUPGHOME; \
+	for fpr in \
+		573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62 \
+		8540A6F18833A80E9C1653A42FD21310B49F6B46 \
+		9E9BE90EACBCDE69FE9B204CBCDCD8A38D88A2B3 \
+	; do \
+		echo "$keys" | grep -q "$fpr"; \
+	done; \
+	echo "deb [signed-by=/usr/share/keyrings/nginx-archive-keyring.gpg] https://nginx.org/packages/debian/ trixie nginx" \
+		> /etc/apt/sources.list.d/nginx.list; \
+	{ \
+		echo 'Package: *'; \
+		echo 'Pin: origin nginx.org'; \
+		echo 'Pin: release o=nginx'; \
+		echo 'Pin-Priority: 900'; \
+	} > /etc/apt/preferences.d/99nginx; \
+	\
+# gnupg was only needed to dearmor the signing key
+	apt-mark auto '.*' > /dev/null; \
+	[ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; \
+	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+	\
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		nginx="$NGINX_VERSION" \
+		supervisor \
+		tzdata; \
+	apt-get dist-clean; \
+# drop the nginx.org package's default vhost (it lives in conf.d, unlike Debian's);
+# our vhost lives in http.d to keep the same layout (and entrypoint scripts) as the alpine image
+	rm -f /etc/nginx/conf.d/default.conf; \
+	mkdir -p /etc/nginx/http.d; \
+	nginx -v
+
+ARG INCLUDE_BUILD_TOOLS=false
+RUN set -eux; \
+	if [ "$INCLUDE_BUILD_TOOLS" = 'true' ]; then \
+		php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.10.2; \
+		apt-get update; \
+		apt-get install -y --no-install-recommends git make nodejs npm; \
+		apt-get dist-clean; \
+	fi
+
+# Configure php/php-fpm
+COPY conf/php/php.ini $PHP_INI_DIR/
+COPY conf/php/opcache.ini $PHP_INI_DIR/conf.d/
+COPY conf/php-fpm/www.conf /usr/local/etc/php-fpm.d/
+
+# Configure nginx
+COPY conf/nginx/nginx.conf /etc/nginx/nginx.conf
+COPY conf/nginx/default.conf /etc/nginx/http.d/default.conf
+
+# Configure supervisor
+COPY conf/supervisor/supervisord.conf /etc/supervisord.conf
+COPY conf/supervisor/supervisor.d /etc/supervisor.d
+
+# Configure entrypoint
+COPY --chmod=755 conf/docker-entrypoint.d /docker-entrypoint.d/
+COPY --chmod=755 docker-entrypoint.sh /
+
 WORKDIR /var/www/html
 
-# Override stop signal to stop process gracefully
-# https://github.com/php/php-src/blob/17baa87faddc2550def3ae7314236826bc1b1398/sapi/fpm/php-fpm.8.in#L163
+EXPOSE 80
+
+# Probes nginx -> unix socket -> php-fpm in one request, so it fails if any link in the chain is down.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD curl -fsS http://127.0.0.1/ping || exit 1
+
+# supervisord shuts down gracefully on SIGQUIT, stopping each program with its
+# own configured stopsignal (QUIT for nginx so in-flight requests finish)
 STOPSIGNAL SIGQUIT
 
-EXPOSE 9000
-CMD ["php-fpm"]
+ENTRYPOINT ["/docker-entrypoint.sh"]
+CMD ["supervisord", "-c", "/etc/supervisord.conf"]
