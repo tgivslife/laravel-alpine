@@ -1,4 +1,4 @@
-# 8.5 Debian (8.5.8 on trixie)
+# 8.5 Debian ()
 
 - [What's included](#whats-included)
 - [Build image](#build-image)
@@ -8,20 +8,20 @@
 
 ### What's included
 
-Debian `trixie` based variant of the [8.5 alpine image](../../8.5/README.md), built on the official `php:8.5.8-fpm-trixie` image (glibc: `opcache.huge_code_pages` works, unlike musl on PHP 8.5).
+Debian `trixie` based variant of the [8.5 alpine image](../../8.5/README.md), built on the official `php:8.5.8-fpm-trixie` image.
 
 Default packages
 
-- PHP-FPM - `8.5.8` (official docker image)
-- Nginx - `1.26.3` (trixie archive)
-- Supervisor - `4.2.5` (trixie archive)
+- PHP-FPM - `8.5.8`
+- Nginx - `1.30.4`
+- Supervisor - `4.2.5`
 
 Build packages
 
 - Composer - `2.10.2`
-- NodeJs - `20.19.2` (trixie archive)
-- Npm - `9.2.0` (trixie archive)
-- Git - `2.47.3` (trixie archive)
+- NodeJs - `24.17.0`
+- Npm - `11.12.1`
+- Git - `2.47.3`
 
 _Php Modules_
 

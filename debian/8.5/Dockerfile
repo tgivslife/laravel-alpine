@@ -1,11 +1,16 @@
 #
 # Based on the official docker-library/php template (generated via "apply-templates.sh"),
-# restructured as a multi-stage build: PHP is compiled in the "builder" stage, build-only
+# Restructured as a multi-stage build: PHP is compiled in the "builder" stage, build-only
 # artifacts (headers, pear/pecl, phpize, source tarball) are pruned, and the final image
 # ships only /usr/local plus the runtime libraries the binaries actually link against.
 #
 
-FROM debian:trixie-20260713-slim AS builder
+ARG DEBIAN_VERSION=trixie-20260713-slim
+ARG PHP_VERSION=8.5.8
+ARG REGISTRY=docker.io
+ARG INCLUDE_BUILD_TOOLS=false
+
+FROM ${REGISTRY}/debian:${DEBIAN_VERSION} AS builder
 
 # prevent Debian's PHP packages from being installed
 # https://github.com/docker-library/php/pull/542
@@ -353,54 +358,9 @@ RUN set -eux; \
 # static by design — no extension compiling in derived images (use `--target builder` for that)
 #
 
-FROM debian:trixie-20260713-slim
+FROM ${REGISTRY}/debian:${DEBIAN_VERSION}
 
-# prevent Debian's PHP packages from being installed
-# https://github.com/docker-library/php/pull/542
-RUN set -eux; \
-	{ \
-		echo 'Package: php*'; \
-		echo 'Pin: release *'; \
-		echo 'Pin-Priority: -1'; \
-	} > /etc/apt/preferences.d/no-debian-php
-
-ENV PHP_INI_DIR=/usr/local/etc/php
-ENV PHP_VERSION=8.5.8
-
-# compiled PHP + entrypoint + fpm config (all live under /usr/local)
-COPY --from=pruned /usr/local /usr/local
-
-RUN --mount=type=bind,from=extensions,source=/usr/src/php-runtime-deps.txt,target=/tmp/php-runtime-deps.txt \
-	set -eux; \
-	apt-get update; \
-	apt-get install -y --no-install-recommends \
-		ca-certificates \
-		curl \
-		$(cat /tmp/php-runtime-deps.txt) \
-	; \
-	apt-get dist-clean; \
-	\
-# allow running as an arbitrary user (https://github.com/docker-library/php/issues/743)
-	[ ! -d /var/www/html ]; \
-	mkdir -p /var/www/html; \
-	chown www-data:www-data /var/www/html; \
-	chmod 1777 /var/www/html; \
-	\
-# smoke test: fails if any shared library dependency is missing
-# (extension load failures only warn on stderr, so assert stderr is empty)
-	err="$(php --version 3>&1 1>&2 2>&3)"; \
-	[ -z "$err" ]; \
-	for ext in \
-		bcmath bz2 curl exif gd intl mbstring mysqli pcntl \
-		pdo_mysql pdo_pgsql pgsql redis sockets sodium zip \
-	; do \
-		php -r 'extension_loaded($argv[1]) or exit(1);' "$ext"; \
-	done; \
-	php -m
-
-#
-# Laravel runtime: nginx + supervisor (+ optional build tools), mirroring the alpine image
-#
+ARG INCLUDE_BUILD_TOOLS
 
 ENV TZ="Europe/Bucharest" \
     \
@@ -432,9 +392,49 @@ ENV TZ="Europe/Bucharest" \
     NGINX_WORKER_RLIMIT_NOFILE="65535" \
     NGINX_WORKER_CONNECTIONS="4096"
 
-# latest stable from nginx.org (Debian's own nginx package stays frozen at the release version);
-# bump when upstream publishes a new stable
 ENV NGINX_VERSION=1.30.4-1~trixie
+
+# prevent Debian's PHP packages from being installed
+# https://github.com/docker-library/php/pull/542
+RUN set -eux; \
+	{ \
+		echo 'Package: php*'; \
+		echo 'Pin: release *'; \
+		echo 'Pin-Priority: -1'; \
+	} > /etc/apt/preferences.d/no-debian-php
+
+ENV PHP_INI_DIR=/usr/local/etc/php
+
+# compiled PHP + entrypoint + fpm config (all live under /usr/local)
+COPY --from=pruned /usr/local /usr/local
+
+RUN --mount=type=bind,from=extensions,source=/usr/src/php-runtime-deps.txt,target=/tmp/php-runtime-deps.txt \
+	set -eux; \
+	apt-get update; \
+	apt-get install -y --no-install-recommends \
+		ca-certificates \
+		curl \
+		$(cat /tmp/php-runtime-deps.txt) \
+	; \
+	apt-get dist-clean; \
+	\
+# allow running as an arbitrary user (https://github.com/docker-library/php/issues/743)
+	[ ! -d /var/www/html ]; \
+	mkdir -p /var/www/html; \
+	chown www-data:www-data /var/www/html; \
+	chmod 1777 /var/www/html; \
+	\
+# smoke test: fails if any shared library dependency is missing
+# (extension load failures only warn on stderr, so assert stderr is empty)
+	err="$(php --version 3>&1 1>&2 2>&3)"; \
+	[ -z "$err" ]; \
+	for ext in \
+		bcmath bz2 curl exif gd intl mbstring mysqli pcntl \
+		pdo_mysql pdo_pgsql pgsql redis sockets sodium zip \
+	; do \
+		php -r 'extension_loaded($argv[1]) or exit(1);' "$ext"; \
+	done; \
+	php -m
 
 RUN set -eux; \
 	savedAptMark="$(apt-mark showmanual)"; \
@@ -479,13 +479,51 @@ RUN set -eux; \
 	mkdir -p /etc/nginx/http.d; \
 	nginx -v
 
-ARG INCLUDE_BUILD_TOOLS=false
+ARG NODE_VERSION=24.17.0
+ARG NODE_SHA256_ARM64=67324b9e515e7d13da72571a5dd522bb23145a820f7dde15497897e466759ab3
+ARG NODE_SHA256_X64=ab343a1b747c7cbf3630dfd7dbf818c5423fab2eb4f5ad1afc896f6bd121a917
+ARG NPM_VERSION=11.12.1
+ARG NPM_SHA256=e679850e663b16f5f146ee425d0eb0e3442c1d2bda3d513bbfd7c81f5ee5db38
+
 RUN set -eux; \
 	if [ "$INCLUDE_BUILD_TOOLS" = 'true' ]; then \
 		php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.10.2; \
+		\
+		savedAptMark="$(apt-mark showmanual)"; \
 		apt-get update; \
-		apt-get install -y --no-install-recommends git make nodejs npm; \
+		apt-get install -y --no-install-recommends git make binutils xz-utils; \
+		\
+		case "$(dpkg --print-architecture)" in \
+			arm64) nodeArch='arm64'; nodeSha256="$NODE_SHA256_ARM64" ;; \
+			amd64) nodeArch='x64'; nodeSha256="$NODE_SHA256_X64" ;; \
+			*) echo >&2 "error: unsupported architecture"; exit 1 ;; \
+		esac; \
+		curl -fsSL -o /tmp/node.tar.xz "https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-$nodeArch.tar.xz"; \
+		echo "$nodeSha256 */tmp/node.tar.xz" | sha256sum -c -; \
+		tar -xJf /tmp/node.tar.xz -C /usr/local/bin --strip-components=2 --no-same-owner \
+			"node-v$NODE_VERSION-linux-$nodeArch/bin/node"; \
+		rm /tmp/node.tar.xz; \
+		strip --strip-all /usr/local/bin/node; \
+		\
+		curl -fsSL -o /tmp/npm.tgz "https://registry.npmjs.org/npm/-/npm-$NPM_VERSION.tgz"; \
+		echo "$NPM_SHA256 */tmp/npm.tgz" | sha256sum -c -; \
+		mkdir -p /usr/local/lib/node_modules; \
+		tar -xzf /tmp/npm.tgz -C /usr/local/lib/node_modules --no-same-owner; \
+		rm /tmp/npm.tgz; \
+		mv /usr/local/lib/node_modules/package /usr/local/lib/node_modules/npm; \
+		ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm; \
+		ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx; \
+		\
+		apt-mark auto '.*' > /dev/null; \
+		[ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; \
+		apt-mark manual git make > /dev/null; \
+		apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
 		apt-get dist-clean; \
+		\
+		composer --version; \
+		git --version; \
+		[ "$(node --version)" = "v$NODE_VERSION" ]; \
+		[ "$(npm --version)" = "$NPM_VERSION" ]; \
 	fi
 
 # Configure php/php-fpm

@@ -1,7 +1,7 @@
 # Laravel-Alpine
 
-> These Docker images provide a lightweight PHP-FPM environment on Alpine Linux, optimized for running Laravel and other PHP applications with Nginx. It
-> includes common PHP extensions, Redis, PostgreSQL, MySQL, GD, OPCache, and an optional build toolchain for development workflows.
+> These Docker images provide a lightweight PHP-FPM environment on Alpine Linux — with a Debian (`trixie`) variant also available — optimized for running Laravel and other PHP applications with Nginx.
+> They include common PHP extensions, Redis, PostgreSQL, MySQL, GD, OPCache, and an optional build toolchain for development workflows.
 
 ## What's Included
 
@@ -19,20 +19,14 @@
 - [Npm](https://www.npmjs.com/)
 - [Git](https://git-scm.com/)
 
-### Images
-
-- [8.5](8.5/README.md)
-- [8.4](8.4/README.md)
-- [8.3](8.3/README.md)
-- [8.2](8.2/README.md)
-- [7.4](7.4/README.md)
-
 ### Available tags
 
-Tags published on [Docker Hub](https://hub.docker.com/r/stsdockerhub/php/tags), grouped by major PHP version. Each runtime tag (`[php version]-laravel-alpine[alpine version]`) has a matching `-build` variant that includes the build toolchain (Composer, NodeJs, Npm, Git).
+Tags published on [Docker Hub](https://hub.docker.com/r/stsdockerhub/php/tags), grouped by major PHP version. Each runtime tag (`[php version]-laravel-alpine[alpine version]`, or `[php version]-laravel-[debian codename]` for the [Debian variant](./debian/8.5/README.md)) has a matching `-build` variant that includes the build toolchain (Composer, NodeJs, Npm, Git).
+A working sample application (Laravel + Vue starter kit, scheduler + horizon test jobs) lives in [example-app](./example-app/README.md).
 
 #### PHP 8.5
 
+- `8.5.8-laravel-trixie` / `8.5.8-laravel-trixie-build`
 - `8.5.8-laravel-alpine3.24-build` / `8.5.8-laravel-alpine3.24`
 
 #### PHP 8.4
