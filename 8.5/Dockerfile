@@ -1,5 +1,5 @@
 ARG ALPINE_VERSION=3.24
-ARG PHP_VERSION=8.5.8
+ARG PHP_VERSION=8.5.10
 ARG REGISTRY=docker.io
 ARG INCLUDE_BUILD_TOOLS=false
 
@@ -87,7 +87,7 @@ RUN apk add --no-cache tzdata \
     && apk del .build-deps
 
 RUN if [ "$INCLUDE_BUILD_TOOLS" = true ] ; then \
-      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.10.2 \
+      php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.10.3 \
       && apk add --no-cache git make nodejs npm ; \
     fi
 

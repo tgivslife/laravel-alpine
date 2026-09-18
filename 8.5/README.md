@@ -10,14 +10,14 @@
 
 Default packages
 
-- PHP-FPM - `8.5.8`
-- Nginx - `1.30.3`
+- PHP-FPM - `8.5.10`
+- Nginx - `1.30.4`
 - Supervisor - `4.3.0`
 
 Build packages
 
-- Composer - `2.10.2`
-- NodeJs - `24.17.0`
+- Composer - `2.10.3`
+- NodeJs - `24.18.1`
 - Npm - `11.12.1`
 - Git - `2.54.0`
 
@@ -88,19 +88,19 @@ When building images the following naming convention is required `[php version]`
 __Image used for building laravel application__
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.5.8-laravel-alpine3.24-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.5/Dockerfile ./8.5
+docker build --no-cache -t stsdockerhub/php:8.5.10-laravel-alpine3.24-build --build-arg INCLUDE_BUILD_TOOLS=true -f 8.5/Dockerfile ./8.5
 ```
 
 __Image used for running laravel application__
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.5.8-laravel-alpine3.24 -f 8.5/Dockerfile ./8.5
+docker build --no-cache -t stsdockerhub/php:8.5.10-laravel-alpine3.24 -f 8.5/Dockerfile ./8.5
 ```
 
 The current arguments that can be set by `--build-args` (_docker build --build-arg VAR1=value1_):
 
 - Alpine version: `--build-arg ALPINE_VERSION=3.24` , default is __3.24__
-- Php version: `--build-arg PHP_VERSION=8.5.8` , default is __8.5.8__
+- Php version: `--build-arg PHP_VERSION=8.5.10` , default is __8.5.10__
 - Docker registry: `--build-arg REGISTRY=repos.stsnet.ro` , default __docker.io__
 - Include packages used for build: `--build-arg INCLUDE_BUILD_TOOLS=false` , default is __false__
 
@@ -249,8 +249,8 @@ Docker images are pushed to Docker Hub through the docker push command. A single
 2. Push your newly tagged private images to your Docker namespace
 
    ```
-   docker push stsdockerhub/php:8.5.8-laravel-alpine3.24-build
-   docker push stsdockerhub/php:8.5.8-laravel-alpine3.24
+   docker push stsdockerhub/php:8.5.10-laravel-alpine3.24-build
+   docker push stsdockerhub/php:8.5.10-laravel-alpine3.24
    ```
 
 ### Example deploy app
@@ -261,7 +261,7 @@ Example of dockerfile for deploying laravel application using docker containers.
 
 ```dockerfile
 ARG REGISTRY=docker.io/stsdockerhub
-ARG LARAVEL_ALPINE_VERSION=8.5.8-laravel-alpine3.24
+ARG LARAVEL_ALPINE_VERSION=8.5.10-laravel-alpine3.24
 
 FROM ${REGISTRY}/php:${LARAVEL_ALPINE_VERSION}-build as build-container
 
