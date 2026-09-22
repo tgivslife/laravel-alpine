@@ -26,6 +26,8 @@ A working sample application (Laravel + Vue starter kit, scheduler + horizon tes
 
 #### PHP 8.5
 
+- `8.5.10-laravel-trixie` / `8.5.10-laravel-trixie-build`
+- `8.5.10-laravel-alpine3.24` / `8.5.10-laravel-alpine3.24-build`
 - `8.5.8-laravel-trixie` / `8.5.8-laravel-trixie-build`
 - `8.5.8-laravel-alpine3.24-build` / `8.5.8-laravel-alpine3.24`
 

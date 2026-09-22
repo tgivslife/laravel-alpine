@@ -141,6 +141,8 @@ The current environment variables that can be set by `--env` (_docker run --env 
 
         PHP_MEMORY_LIMIT="128M"
 
+  Only `memory_limit` is set. `max_memory_limit` (new in PHP 8.5) stays `-1`, so `ini_set('memory_limit', ...)` can still raise the limit at runtime.
+
 - Maximum allowed size for uploaded files
 
         PHP_UPLOAD_MAX_FILESIZE="50M"
