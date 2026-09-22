@@ -8,19 +8,19 @@
 
 ### What's included
 
-Debian `trixie` based variant of the [8.5 alpine image](../../8.5/README.md), built on the official `php:8.5.8-fpm-trixie` image.
+Debian `trixie` based variant of the [8.5 alpine image](../../8.5/README.md), built on the official `php:8.5.10-fpm-trixie` image.
 
 Default packages
 
-- PHP-FPM - `8.5.8`
-- Nginx - `1.30.4`
+- PHP-FPM - `8.5.10`
+- Nginx - `1.30.5`
 - Supervisor - `4.2.5`
 
 Build packages
 
-- Composer - `2.10.2`
-- NodeJs - `24.17.0`
-- Npm - `11.12.1`
+- Composer - `2.10.3`
+- NodeJs - `24.21.0`
+- Npm - `11.19.1`
 - Git - `2.47.3`
 
 _Php Modules_
@@ -90,19 +90,19 @@ When building images the following naming convention is required `[php version]`
 __Image used for building laravel application__
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.5.8-laravel-trixie-build --build-arg INCLUDE_BUILD_TOOLS=true -f debian/8.5/Dockerfile ./debian/8.5
+docker build --no-cache -t stsdockerhub/php:8.5.10-laravel-trixie-build --build-arg INCLUDE_BUILD_TOOLS=true -f debian/8.5/Dockerfile ./debian/8.5
 ```
 
 __Image used for running laravel application__
 
 ```
-docker build --no-cache -t stsdockerhub/php:8.5.8-laravel-trixie -f debian/8.5/Dockerfile ./debian/8.5
+docker build --no-cache -t stsdockerhub/php:8.5.10-laravel-trixie -f debian/8.5/Dockerfile ./debian/8.5
 ```
 
 The current arguments that can be set by `--build-args` (_docker build --build-arg VAR1=value1_):
 
 - Debian codename: `--build-arg DEBIAN_CODENAME=trixie` , default is __trixie__
-- Php version: `--build-arg PHP_VERSION=8.5.8` , default is __8.5.8__
+- Php version: `--build-arg PHP_VERSION=8.5.10` , default is __8.5.10__
 - Docker registry: `--build-arg REGISTRY=repos.stsnet.ro` , default __docker.io__
 - Include packages used for build: `--build-arg INCLUDE_BUILD_TOOLS=false` , default is __false__
 
@@ -251,8 +251,8 @@ Docker images are pushed to Docker Hub through the docker push command. A single
 2. Push your newly tagged private images to your Docker namespace
 
    ```
-   docker push stsdockerhub/php:8.5.8-laravel-trixie-build
-   docker push stsdockerhub/php:8.5.8-laravel-trixie
+   docker push stsdockerhub/php:8.5.10-laravel-trixie-build
+   docker push stsdockerhub/php:8.5.10-laravel-trixie
    ```
 
 ### Example deploy app
@@ -263,7 +263,7 @@ Example of dockerfile for deploying laravel application using docker containers.
 
 ```dockerfile
 ARG REGISTRY=docker.io/stsdockerhub
-ARG LARAVEL_TRIXIE_VERSION=8.5.8-laravel-trixie
+ARG LARAVEL_TRIXIE_VERSION=8.5.10-laravel-trixie
 
 FROM ${REGISTRY}/php:${LARAVEL_TRIXIE_VERSION}-build as build-container
 

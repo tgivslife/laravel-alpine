@@ -5,8 +5,8 @@
 # ships only /usr/local plus the runtime libraries the binaries actually link against.
 #
 
-ARG DEBIAN_VERSION=trixie-20260713-slim
-ARG PHP_VERSION=8.5.8
+ARG DEBIAN_VERSION=trixie-20260918-slim
+ARG PHP_VERSION=8.5.10
 ARG REGISTRY=docker.io
 ARG INCLUDE_BUILD_TOOLS=false
 
@@ -61,9 +61,9 @@ ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
 ENV GPG_KEYS="1198C0117593497A5EC5C199286AF1F9897469DC 49D9AF6BC72A80D6691719C8AA23F5BE9C7097D4 D95C03BC702BE9515344AE3374E44BC9067701A5"
 
-ENV PHP_VERSION=8.5.8
-ENV PHP_URL="https://www.php.net/distributions/php-8.5.8.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-8.5.8.tar.xz.asc"
-ENV PHP_SHA256="58910198d19e873048fe87cdfe16bc790025417ede3d1651bfa1c4b533d573f2"
+ENV PHP_VERSION=8.5.10
+ENV PHP_URL="https://www.php.net/distributions/php-8.5.10.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-8.5.10.tar.xz.asc"
+ENV PHP_SHA256="6a8bebaa4d5a979a38db29a9373e9851f60c6b11f72172c585947e78f3081957"
 
 RUN set -eux; \
 	\
@@ -392,7 +392,7 @@ ENV TZ="Europe/Bucharest" \
     NGINX_WORKER_RLIMIT_NOFILE="65535" \
     NGINX_WORKER_CONNECTIONS="4096"
 
-ENV NGINX_VERSION=1.30.4-1~trixie
+ENV NGINX_VERSION=1.30.5-1~trixie
 
 # prevent Debian's PHP packages from being installed
 # https://github.com/docker-library/php/pull/542
@@ -479,15 +479,15 @@ RUN set -eux; \
 	mkdir -p /etc/nginx/http.d; \
 	nginx -v
 
-ARG NODE_VERSION=24.17.0
-ARG NODE_SHA256_ARM64=67324b9e515e7d13da72571a5dd522bb23145a820f7dde15497897e466759ab3
-ARG NODE_SHA256_X64=ab343a1b747c7cbf3630dfd7dbf818c5423fab2eb4f5ad1afc896f6bd121a917
-ARG NPM_VERSION=11.12.1
-ARG NPM_SHA256=e679850e663b16f5f146ee425d0eb0e3442c1d2bda3d513bbfd7c81f5ee5db38
+ARG NODE_VERSION=24.21.0
+ARG NODE_SHA256_ARM64=6ad1325edbdb5649c379b75a237147a666c95d4f9ae8d340fef2d1575d289ad2
+ARG NODE_SHA256_X64=fd8e59d5a511510f6a298afb548f18c7d2b1be404d8b4a27d94fbe49f56cb2d6
+ARG NPM_VERSION=11.19.1
+ARG NPM_SHA256=9f58bff01604cb1b14008fef14dceb14d836a49225e45c6c2e37de3be3e707f0
 
 RUN set -eux; \
 	if [ "$INCLUDE_BUILD_TOOLS" = 'true' ]; then \
-		php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.10.2; \
+		php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.10.3; \
 		\
 		savedAptMark="$(apt-mark showmanual)"; \
 		apt-get update; \
