@@ -57,7 +57,7 @@ jobs:
     # A release commit is built and published by its tag's run; the same commit pushed to master is skipped, and with
     # it every job that needs this one.
     if: "github.ref_type == 'tag' || !startsWith(github.event.head_commit.message, 'build(release): ')"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       tag: ${{ steps.version.outputs.tag }}
       php: ${{ steps.version.outputs.php }}
@@ -246,7 +246,7 @@ jobs:
   publish:
     needs: [version, build]
     if: needs.version.outputs.publish == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     env:
