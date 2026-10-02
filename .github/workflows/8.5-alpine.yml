@@ -1,0 +1,332 @@
+# Builds and smoke-tests stsdockerhub/php:<php>-laravel-alpine<alpine>[-build] for amd64 + arm64 on every push to
+# master and pull request, and publishes them to Docker Hub on a release tag.
+#
+# Versions live only in the ARG lines at the top of 8.5/Dockerfile. A release is one commit titled
+#
+#   build(release): <php>-laravel-alpine<alpine>      e.g. build(release): 8.5.12-laravel-alpine3.24
+#
+# that changes nothing but those ARG lines; its body lists the changes. Tag that commit with the same <tag> and push both:
+#
+#   git push origin-github master 8.5.12-laravel-alpine3.24
+#
+# The tag's run builds, smoke-tests, pushes to Docker Hub, then creates the GitHub release: the commit body plus the
+# package versions and PHP modules read from the published image. It refuses a tag that does not match the Dockerfile,
+# is not on a release commit, or whose commit changes more than the version ARGs. The master run skips the release
+# commit: its tag's run builds it.
+#
+# To republish a released version: re-run its tag's workflow run (e.g. to pick up base image security patches), or run
+# the workflow manually on master to publish master under the current tag (e.g. after a config fix).
+#
+# Each architecture builds on its own native runner and is pushed by digest (no tag); the publish job combines the two
+# digests under the plain tags, so no per-architecture tags are created.
+#
+# Required repository secrets: DOCKERHUB_USERNAME, DOCKERHUB_TOKEN (write access to stsdockerhub/php)
+
+name: 8.5 alpine
+
+on:
+  push:
+    branches: [master]
+    tags: ['8.5.*-laravel-alpine*']
+    # Not applied to tag pushes.
+    paths:
+      - '8.5/**'
+      - '!8.5/README.md'
+      - '.github/workflows/8.5-alpine.yml'
+  pull_request:
+    paths:
+      - '8.5/**'
+      - '!8.5/README.md'
+      - '.github/workflows/8.5-alpine.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Builds of a newer commit cancel older ones; publishing runs (tag, manual) are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' && github.event_name != 'workflow_dispatch' }}
+
+env:
+  IMAGE: stsdockerhub/php
+  CONTEXT: 8.5
+
+jobs:
+  version:
+    # A release commit is built and published by its tag's run; the same commit pushed to master is skipped, and with
+    # it every job that needs this one.
+    if: "github.ref_type == 'tag' || !startsWith(github.event.head_commit.message, 'build(release): ')"
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      php: ${{ steps.version.outputs.php }}
+      composer: ${{ steps.version.outputs.composer }}
+      created: ${{ steps.version.outputs.created }}
+      publish: ${{ steps.version.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2 # the release check compares the tagged commit with its parent
+
+      - name: Read versions from Dockerfile
+        id: version
+        run: |
+          php=$(sed -n 's/^ARG PHP_VERSION=//p' "$CONTEXT/Dockerfile")
+          alpine=$(sed -n 's/^ARG ALPINE_VERSION=//p' "$CONTEXT/Dockerfile")
+          composer=$(sed -n 's/^ARG COMPOSER_VERSION=//p' "$CONTEXT/Dockerfile")
+          tag="${php}-laravel-alpine${alpine}"
+          release_subject="build(release): ${tag}"
+          subject=$(git log -1 --format=%s)
+
+          publish=false
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            if [ "$GITHUB_REF_NAME" != "$tag" ]; then
+              echo "::error::Tag ${GITHUB_REF_NAME} does not match the Dockerfile, which builds ${tag}"
+              exit 1
+            fi
+            if [ "$subject" != "$release_subject" ]; then
+              echo "::error::Tag ${tag} is on '${subject}', not on the release commit '${release_subject}'"
+              exit 1
+            fi
+            # Only the version ARG lines may change; anything else belongs in an earlier commit, which CI has built.
+            others=$(git diff --name-only HEAD^ HEAD | grep -vxF "$CONTEXT/Dockerfile" || true)
+            if [ -n "$others" ]; then
+              echo "::error::The release commit changes more than $CONTEXT/Dockerfile: $(echo "$others" | paste -sd, -). Commit other changes before the release."
+              exit 1
+            fi
+            lines=$(git diff -U0 HEAD^ HEAD -- "$CONTEXT/Dockerfile" | grep -vE '^(\+\+\+|---) ' | grep -E '^[-+]' \
+              | grep -vE '^[-+]ARG (ALPINE|PHP|COMPOSER)_VERSION=' || true)
+            if [ -n "$lines" ]; then
+              echo "::error::The release commit changes more than the version ARGs in $CONTEXT/Dockerfile. Commit other changes before the release."
+              echo "$lines"
+              exit 1
+            fi
+            publish=true
+          elif [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] && [ "$GITHUB_REF" = refs/heads/master ]; then
+            if ! git ls-remote --exit-code --tags origin "refs/tags/${tag}" > /dev/null; then
+              echo "::error::${tag} is not released yet, so there is nothing to republish. Release it by tagging a '${release_subject}' commit."
+              exit 1
+            fi
+            publish=true
+          fi
+
+          {
+            echo "php=${php}"
+            echo "composer=${composer}"
+            echo "tag=${tag}"
+            echo "created=$(git log -1 --format=%cI)"
+            echo "publish=${publish}"
+          } | tee -a "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    strategy:
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    env:
+      TAG: ${{ needs.version.outputs.tag }}
+      PUBLISH: ${{ needs.version.outputs.publish }}
+      LABELS: |
+        org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+        org.opencontainers.image.revision=${{ github.sha }}
+        org.opencontainers.image.created=${{ needs.version.outputs.created }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: docker/setup-buildx-action@v4
+
+      - name: Log in to Docker Hub
+        if: env.PUBLISH == 'true'
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build runtime image
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ env.CONTEXT }}
+          platforms: linux/${{ matrix.arch }}
+          labels: |
+            ${{ env.LABELS }}
+            org.opencontainers.image.version=${{ env.TAG }}
+          load: true
+          tags: smoke:runtime
+
+      - name: Smoke test runtime image
+        env:
+          PHP_VERSION: ${{ needs.version.outputs.php }}
+        run: |
+          docker run -d --name smoke -e LARAVEL_SCHEDULER_ENABLE=0 smoke:runtime
+
+          # nginx -> php-fpm chain, same probe as the image HEALTHCHECK
+          for _ in $(seq 30); do
+            docker exec smoke wget -qO- http://127.0.0.1/ping && break
+            sleep 2
+          done
+          docker exec smoke wget -qO- http://127.0.0.1/ping || { docker logs smoke; exit 1; }
+
+          actual=$(docker exec smoke php -r 'echo PHP_VERSION;')
+          [ "$actual" = "$PHP_VERSION" ] || { echo "Expected PHP ${PHP_VERSION}, got ${actual}"; exit 1; }
+
+          docker exec smoke php -m
+          docker rm -f smoke
+
+      - name: Build build image
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ env.CONTEXT }}
+          platforms: linux/${{ matrix.arch }}
+          build-args: INCLUDE_BUILD_TOOLS=true
+          labels: |
+            ${{ env.LABELS }}
+            org.opencontainers.image.version=${{ env.TAG }}-build
+          load: true
+          tags: smoke:build
+
+      - name: Smoke test build image
+        env:
+          COMPOSER_VERSION: ${{ needs.version.outputs.composer }}
+        run: |
+          docker run --rm smoke:build composer --version | tee composer.txt
+          grep -q "Composer version ${COMPOSER_VERSION} " composer.txt
+          docker run --rm smoke:build sh -c 'node --version && npm --version && git --version'
+
+      # Rebuilt from the builder cache, so these are the images tested above.
+      - name: Push runtime image by digest
+        id: runtime
+        if: env.PUBLISH == 'true'
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ env.CONTEXT }}
+          platforms: linux/${{ matrix.arch }}
+          labels: |
+            ${{ env.LABELS }}
+            org.opencontainers.image.version=${{ env.TAG }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Push build image by digest
+        id: build
+        if: env.PUBLISH == 'true'
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ env.CONTEXT }}
+          platforms: linux/${{ matrix.arch }}
+          build-args: INCLUDE_BUILD_TOOLS=true
+          labels: |
+            ${{ env.LABELS }}
+            org.opencontainers.image.version=${{ env.TAG }}-build
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digests
+        if: env.PUBLISH == 'true'
+        env:
+          RUNTIME_DIGEST: ${{ steps.runtime.outputs.digest }}
+          BUILD_DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          mkdir -p digests/runtime digests/build
+          touch "digests/runtime/${RUNTIME_DIGEST#sha256:}"
+          touch "digests/build/${BUILD_DIGEST#sha256:}"
+
+      - name: Upload digests
+        if: env.PUBLISH == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: digests-${{ matrix.arch }}
+          path: digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: [version, build]
+    if: needs.version.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ needs.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          path: digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Create multi-arch tags
+        run: |
+          # shellcheck disable=SC2046 # one source argument per digest
+          docker buildx imagetools create -t "${IMAGE}:${TAG}" \
+            $(printf "${IMAGE}@sha256:%s " $(ls digests/runtime))
+          # shellcheck disable=SC2046
+          docker buildx imagetools create -t "${IMAGE}:${TAG}-build" \
+            $(printf "${IMAGE}@sha256:%s " $(ls digests/build))
+
+          docker buildx imagetools inspect "${IMAGE}:${TAG}"
+          docker buildx imagetools inspect "${IMAGE}:${TAG}-build"
+
+      # The versions come from the published images, so a republish (re-run or manual run) refreshes them.
+      - name: Create or update GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch --quiet --depth=1 origin "refs/tags/${TAG}:refs/tags/${TAG}"
+          release_commit=$(git rev-parse "${TAG}^{commit}")
+
+          {
+            # The release commit's body lists the changes; trailers (Co-Authored-By, Signed-off-by, ...) are left out.
+            git log -1 --format=%b "$release_commit" | sed -E '/^[A-Za-z-]+-by: /d'
+            echo
+            if [ "$GITHUB_SHA" != "$release_commit" ]; then
+              echo "Republished from ${GITHUB_SHA} on $(date -u +%Y-%m-%d)."
+              echo
+            fi
+            echo "### Images (linux/amd64, linux/arm64)"
+            echo
+            echo "- \`${IMAGE}:${TAG}\`"
+            echo "- \`${IMAGE}:${TAG}-build\` (with Composer, NodeJs, Npm, Git)"
+            echo
+            echo "### Versions"
+            echo
+            echo "| Package | Version |"
+            echo "|---------|---------|"
+            docker run --rm -i --entrypoint sh "${IMAGE}:${TAG}-build" <<'EOF'
+          printf '| PHP-FPM | %s |\n' "$(php -r 'echo PHP_VERSION;')"
+          printf '| Alpine | %s |\n' "$(cat /etc/alpine-release)"
+          printf '| Nginx | %s |\n' "$(nginx -v 2>&1 | sed 's|.*/||')"
+          printf '| Supervisor | %s |\n' "$(supervisord --version)"
+          printf '| Composer | %s |\n' "$(composer --version 2>/dev/null | sed -n 's/^Composer version \([^ ]*\).*/\1/p')"
+          printf '| NodeJs | %s |\n' "$(node --version | sed 's/^v//')"
+          printf '| Npm | %s |\n' "$(npm --version)"
+          printf '| Git | %s |\n' "$(git --version | sed 's/^git version //')"
+          EOF
+            echo
+            echo "<details><summary>PHP modules</summary>"
+            echo
+            echo '```'
+            docker run --rm --entrypoint php "${IMAGE}:${TAG}" -m
+            echo '```'
+            echo
+            echo "</details>"
+          } > notes.md
+          cat notes.md
+
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release edit "$TAG" --notes-file notes.md
+          else
+            gh release create "$TAG" --verify-tag --title "$TAG" --notes-file notes.md
+          fi

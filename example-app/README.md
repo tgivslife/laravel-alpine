@@ -1,6 +1,6 @@
 # Example app
 
-Minimal Laravel 12 + Vue (official [vue-starter-kit](https://github.com/laravel/vue-starter-kit)) application used to verify the `stsdockerhub/php` docker images are functional. It follows the `Example deploy app` section of the image READMEs: the `-build` image compiles the app (composer install, npm ci, npm run build) and the runtime image serves it.
+Minimal Laravel 12 + Vue (official [vue-starter-kit](https://github.com/laravel/vue-starter-kit)) application used to verify the `stsdockerhub/php` docker images are functional. It follows the [Example deploy app](../README.md#example-deploy-app) section of the main README: the `-build` image compiles the app (composer install, npm ci, npm run build) and the runtime image serves it.
 
 What it exercises:
 
