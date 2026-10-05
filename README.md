@@ -15,13 +15,24 @@
 
 Each folder builds one image. Its README lists the PHP modules, build arguments and, for manually published images, the package versions; everything shared is documented here.
 
-| Folder                                   | Base                    | Published by   |
-|------------------------------------------|-------------------------|----------------|
-| [8.5](./8.5/README.md)                   | `php:8.5-fpm-alpine`    | GitHub Actions |
-| [debian/8.5](./debian/8.5/README.md)     | `debian:trixie-slim`    | manually       |
-| [8.4](./8.4/README.md)                   | `php:8.4-fpm-alpine`    | GitHub Actions |
-| [8.3](./8.3/README.md)                   | `php:8.3-fpm-alpine`    | manually       |
-| [8.2](./8.2/README.md), [7.4](./7.4/README.md) | `php:*-fpm-alpine` | legacy, no longer updated (self-contained READMEs) |
+### Alpine
+
+Based on the official `php:*-fpm-alpine` images. Tags: `[php version]-laravel-alpine[alpine version]`.
+
+| Folder                                         | Base                 | Published by   |
+|------------------------------------------------|----------------------|----------------|
+| [8.5](./8.5/README.md)                         | `php:8.5-fpm-alpine` | GitHub Actions |
+| [8.4](./8.4/README.md)                         | `php:8.4-fpm-alpine` | GitHub Actions |
+| [8.3](./8.3/README.md)                         | `php:8.3-fpm-alpine` | manually       |
+| [8.2](./8.2/README.md), [7.4](./7.4/README.md) | `php:*-fpm-alpine`   | legacy, no longer updated (self-contained READMEs) |
+
+### Debian
+
+PHP is compiled from source on `debian:*-slim` (based on the official docker-library/php template). Tags: `[php version]-laravel-[debian codename]`.
+
+| Folder                               | Base                 | Published by   |
+|--------------------------------------|----------------------|----------------|
+| [debian/8.5](./debian/8.5/README.md) | `debian:trixie-slim` | GitHub Actions |
 
 A working sample application (Laravel + Vue starter kit, scheduler + horizon test jobs) lives in [example-app](./example-app/README.md).
 
@@ -143,16 +154,18 @@ goes in an earlier commit, so CI has built it before the release. The release co
 Commit messages follow `type(scope): <what is true after the commit>`, e.g. `ci(docker): ...`, `docs(readme): ...`, `fix(nginx): ...`,
 with a body that says why, then one `- <file>: <change>` line per file.
 
-### By GitHub Actions (8.5, 8.4)
+### By GitHub Actions
 
 Each image has its own workflow, which reads the versions from that image's `Dockerfile` only:
 
-| Image | Dockerfile                           | Workflow                                                             | Tag pattern                  |
-|-------|--------------------------------------|----------------------------------------------------------------------|------------------------------|
-| 8.5   | [8.5/Dockerfile](./8.5/Dockerfile)   | [8.5-alpine.yml](./.github/workflows/8.5-alpine.yml)                 | `8.5.*-laravel-alpine*`      |
-| 8.4   | [8.4/Dockerfile](./8.4/Dockerfile)   | [8.4-alpine.yml](./.github/workflows/8.4-alpine.yml)                 | `8.4.*-laravel-alpine*`      |
+| Image      | Dockerfile                                       | Workflow                                               | Tag pattern                  |
+|------------|--------------------------------------------------|--------------------------------------------------------|------------------------------|
+| 8.5        | [8.5/Dockerfile](./8.5/Dockerfile)               | [8.5-alpine.yml](./.github/workflows/8.5-alpine.yml)   | `8.5.*-laravel-alpine*`      |
+| debian/8.5 | [debian/8.5/Dockerfile](./debian/8.5/Dockerfile) | [8.5-debian.yml](./.github/workflows/8.5-debian.yml)   | `8.5.*-laravel-trixie`       |
+| 8.4        | [8.4/Dockerfile](./8.4/Dockerfile)               | [8.4-alpine.yml](./.github/workflows/8.4-alpine.yml)   | `8.4.*-laravel-alpine*`      |
 
-The release commit changes only the version `ARG` lines at the top of the image `Dockerfile`: for a PHP update, just `PHP_VERSION`. For example:
+The release commit changes only the version `ARG` lines at the top of the image `Dockerfile`: for a PHP update, just `PHP_VERSION`
+(plus `PHP_SHA256` for `debian/8.5`, which compiles PHP from source). For example:
 
 ```
 git commit -am "build(release): 8.5.12-laravel-alpine3.24" -m "- PHP 8.5.12"
@@ -173,6 +186,9 @@ To republish a released version (this also refreshes the versions in its GitHub 
 - re-run the tag's workflow run from the Actions tab, e.g. to pick up base image security patches
 - or run the workflow manually on `master`, which publishes `master` under the current tag, e.g. after a config fix
 
+The `debian/8.5` tag holds only the PHP version and the Debian codename, so a newer Debian snapshot, nginx, NodeJs or Npm without a
+PHP update keeps the current tag: commit the `ARG` change to `master`, then run the workflow manually to republish.
+
 Each image is labelled with its tag, git commit, commit date and source repository: `docker inspect -f '{{json .Config.Labels}}' stsdockerhub/php:<tag>`.
 
 The workflows need the repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` (an access token with write access to `stsdockerhub/php`).
@@ -182,11 +198,11 @@ The workflows need the repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TO
 The release commit bumps the version `ARG`s in the image `Dockerfile` and the package versions in the image README.
 
 1. Sign in with `docker login --username=tgivslife`
-2. Build and push both variants for both architectures, e.g. for `debian/8.5`:
+2. Build and push both variants for both architectures, e.g. for `8.3`:
 
    ```
-   docker buildx build --platform linux/amd64,linux/arm64 --push -t stsdockerhub/php:<tag> ./debian/8.5
-   docker buildx build --platform linux/amd64,linux/arm64 --push -t stsdockerhub/php:<tag>-build --build-arg INCLUDE_BUILD_TOOLS=true ./debian/8.5
+   docker buildx build --platform linux/amd64,linux/arm64 --push -t stsdockerhub/php:<tag> ./8.3
+   docker buildx build --platform linux/amd64,linux/arm64 --push -t stsdockerhub/php:<tag>-build --build-arg INCLUDE_BUILD_TOOLS=true ./8.3
    ```
 
 3. Tag the release commit with `<tag>` and push the tag to remote

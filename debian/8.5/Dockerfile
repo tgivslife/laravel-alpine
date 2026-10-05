@@ -7,6 +7,14 @@
 
 ARG DEBIAN_VERSION=trixie-20260918-slim
 ARG PHP_VERSION=8.5.10
+ARG PHP_SHA256=6a8bebaa4d5a979a38db29a9373e9851f60c6b11f72172c585947e78f3081957
+ARG NGINX_VERSION=1.30.5-1~trixie
+ARG COMPOSER_VERSION=2.10.3
+ARG NODE_VERSION=24.21.0
+ARG NODE_SHA256_ARM64=6ad1325edbdb5649c379b75a237147a666c95d4f9ae8d340fef2d1575d289ad2
+ARG NODE_SHA256_X64=fd8e59d5a511510f6a298afb548f18c7d2b1be404d8b4a27d94fbe49f56cb2d6
+ARG NPM_VERSION=11.19.1
+ARG NPM_SHA256=9f58bff01604cb1b14008fef14dceb14d836a49225e45c6c2e37de3be3e707f0
 ARG REGISTRY=docker.io
 ARG INCLUDE_BUILD_TOOLS=false
 
@@ -61,9 +69,12 @@ ENV PHP_LDFLAGS="-Wl,-O1 -pie"
 
 ENV GPG_KEYS="1198C0117593497A5EC5C199286AF1F9897469DC 49D9AF6BC72A80D6691719C8AA23F5BE9C7097D4 D95C03BC702BE9515344AE3374E44BC9067701A5"
 
-ENV PHP_VERSION=8.5.10
-ENV PHP_URL="https://www.php.net/distributions/php-8.5.10.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-8.5.10.tar.xz.asc"
-ENV PHP_SHA256="6a8bebaa4d5a979a38db29a9373e9851f60c6b11f72172c585947e78f3081957"
+ARG PHP_VERSION
+ARG PHP_SHA256
+
+ENV PHP_VERSION=${PHP_VERSION}
+ENV PHP_URL="https://www.php.net/distributions/php-${PHP_VERSION}.tar.xz" PHP_ASC_URL="https://www.php.net/distributions/php-${PHP_VERSION}.tar.xz.asc"
+ENV PHP_SHA256=${PHP_SHA256}
 
 RUN set -eux; \
 	\
@@ -360,8 +371,6 @@ RUN set -eux; \
 
 FROM ${REGISTRY}/debian:${DEBIAN_VERSION}
 
-ARG INCLUDE_BUILD_TOOLS
-
 ENV TZ="Europe/Bucharest" \
     \
     LARAVEL_SCHEDULER_ENABLE="1" \
@@ -392,7 +401,9 @@ ENV TZ="Europe/Bucharest" \
     NGINX_WORKER_RLIMIT_NOFILE="65535" \
     NGINX_WORKER_CONNECTIONS="4096"
 
-ENV NGINX_VERSION=1.30.5-1~trixie
+ARG NGINX_VERSION
+
+ENV NGINX_VERSION=${NGINX_VERSION}
 
 # prevent Debian's PHP packages from being installed
 # https://github.com/docker-library/php/pull/542
@@ -479,15 +490,18 @@ RUN set -eux; \
 	mkdir -p /etc/nginx/http.d; \
 	nginx -v
 
-ARG NODE_VERSION=24.21.0
-ARG NODE_SHA256_ARM64=6ad1325edbdb5649c379b75a237147a666c95d4f9ae8d340fef2d1575d289ad2
-ARG NODE_SHA256_X64=fd8e59d5a511510f6a298afb548f18c7d2b1be404d8b4a27d94fbe49f56cb2d6
-ARG NPM_VERSION=11.19.1
-ARG NPM_SHA256=9f58bff01604cb1b14008fef14dceb14d836a49225e45c6c2e37de3be3e707f0
+# Declared here, not after FROM, so the -build variant reuses the layers above from cache.
+ARG INCLUDE_BUILD_TOOLS
+ARG COMPOSER_VERSION
+ARG NODE_VERSION
+ARG NODE_SHA256_ARM64
+ARG NODE_SHA256_X64
+ARG NPM_VERSION
+ARG NPM_SHA256
 
 RUN set -eux; \
 	if [ "$INCLUDE_BUILD_TOOLS" = 'true' ]; then \
-		php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version=2.10.3; \
+		php -r "readfile('https://getcomposer.org/installer');" | php -- --install-dir=/usr/bin --filename=composer --version="$COMPOSER_VERSION"; \
 		\
 		savedAptMark="$(apt-mark showmanual)"; \
 		apt-get update; \
