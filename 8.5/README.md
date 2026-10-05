@@ -1,6 +1,6 @@
 # 8.5
 
-Alpine image based on the official `php:8.5-fpm-alpine` image. Released by [GitHub Actions](../README.md#by-github-actions-85).
+Alpine image based on the official `php:8.5-fpm-alpine` image. Released by [GitHub Actions](../README.md#by-github-actions-85-84).
 
 How to build, configure (environment variables), publish and deploy is documented in the [main README](../README.md).
 

@@ -1,23 +1,14 @@
-# 8.4 (8.4.23)
+# 8.4
 
-Alpine image based on the official `php:8.4-fpm-alpine` image. Published [manually](../README.md#manually-other-images).
+Alpine image based on the official `php:8.4-fpm-alpine` image. Released by [GitHub Actions](../README.md#by-github-actions-85-84).
 
 How to build, configure (environment variables), publish and deploy is documented in the [main README](../README.md).
 
 ### What's included
 
-Default packages
-
-- PHP-FPM - `8.4.23`
-- Nginx - `1.30.3`
-- Supervisor - `4.3.0`
-
-Build packages
-
-- Composer - `2.10.2`
-- NodeJs - `24.17.0`
-- Npm - `11.12.1`
-- Git - `2.54.0`
+The version being built is set by the `ARG`s at the top of the [Dockerfile](./Dockerfile). The exact package versions of each
+published tag (PHP-FPM, Alpine, Nginx, Supervisor and, in the `-build` image, Composer, NodeJs, Npm, Git) are listed in its
+[GitHub release](https://github.com/tgivslife/laravel-alpine/releases), read from the published image.
 
 _Php Modules_
 
@@ -81,5 +72,6 @@ Version arguments, with their defaults set at the top of the [Dockerfile](./Dock
 
 - `ALPINE_VERSION` - Alpine version of the base image
 - `PHP_VERSION` - PHP version of the base image
+- `COMPOSER_VERSION` - Composer version installed in the `-build` image
 
 Plus the [common build arguments](../README.md#build-image) (`INCLUDE_BUILD_TOOLS`, `REGISTRY`).

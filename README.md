@@ -19,7 +19,7 @@ Each folder builds one image. Its README lists the PHP modules, build arguments 
 |------------------------------------------|-------------------------|----------------|
 | [8.5](./8.5/README.md)                   | `php:8.5-fpm-alpine`    | GitHub Actions |
 | [debian/8.5](./debian/8.5/README.md)     | `debian:trixie-slim`    | manually       |
-| [8.4](./8.4/README.md)                   | `php:8.4-fpm-alpine`    | manually       |
+| [8.4](./8.4/README.md)                   | `php:8.4-fpm-alpine`    | GitHub Actions |
 | [8.3](./8.3/README.md)                   | `php:8.3-fpm-alpine`    | manually       |
 | [8.2](./8.2/README.md), [7.4](./7.4/README.md) | `php:*-fpm-alpine` | legacy, no longer updated (self-contained READMEs) |
 
@@ -143,9 +143,16 @@ goes in an earlier commit, so CI has built it before the release. The release co
 Commit messages follow `type(scope): <what is true after the commit>`, e.g. `ci(docker): ...`, `docs(readme): ...`, `fix(nginx): ...`,
 with a body that says why, then one `- <file>: <change>` line per file.
 
-### By GitHub Actions (8.5)
+### By GitHub Actions (8.5, 8.4)
 
-The release commit changes only the version `ARG` lines at the top of [8.5/Dockerfile](./8.5/Dockerfile): for a PHP update, just `PHP_VERSION`. For example:
+Each image has its own workflow, which reads the versions from that image's `Dockerfile` only:
+
+| Image | Dockerfile                           | Workflow                                                             | Tag pattern                  |
+|-------|--------------------------------------|----------------------------------------------------------------------|------------------------------|
+| 8.5   | [8.5/Dockerfile](./8.5/Dockerfile)   | [8.5-alpine.yml](./.github/workflows/8.5-alpine.yml)                 | `8.5.*-laravel-alpine*`      |
+| 8.4   | [8.4/Dockerfile](./8.4/Dockerfile)   | [8.4-alpine.yml](./.github/workflows/8.4-alpine.yml)                 | `8.4.*-laravel-alpine*`      |
+
+The release commit changes only the version `ARG` lines at the top of the image `Dockerfile`: for a PHP update, just `PHP_VERSION`. For example:
 
 ```
 git commit -am "build(release): 8.5.12-laravel-alpine3.24" -m "- PHP 8.5.12"
@@ -153,7 +160,7 @@ git tag -a 8.5.12-laravel-alpine3.24 -m "8.5.12-laravel-alpine3.24"
 git push origin-github master 8.5.12-laravel-alpine3.24
 ```
 
-[.github/workflows/8.5-alpine.yml](./.github/workflows/8.5-alpine.yml) builds and smoke-tests both images for `linux/amd64` and `linux/arm64`
+The workflow builds and smoke-tests both images for `linux/amd64` and `linux/arm64`
 on every push to `master` and pull request that touches the image, without publishing.
 
 Pushing a release tag publishes: the tag's run builds and smoke-tests both images, pushes `stsdockerhub/php:<tag>` and `stsdockerhub/php:<tag>-build`,
@@ -168,7 +175,7 @@ To republish a released version (this also refreshes the versions in its GitHub 
 
 Each image is labelled with its tag, git commit, commit date and source repository: `docker inspect -f '{{json .Config.Labels}}' stsdockerhub/php:<tag>`.
 
-The workflow needs the repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` (an access token with write access to `stsdockerhub/php`).
+The workflows need the repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` (an access token with write access to `stsdockerhub/php`).
 
 ### Manually (other images)
 
