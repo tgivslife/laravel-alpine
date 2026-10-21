@@ -13,18 +13,16 @@
 
 ## Images
 
-Each folder builds one image. Its README lists the PHP modules, build arguments and, for manually published images, the package versions; everything shared is documented here.
+Each folder builds one image. Its README lists the PHP modules and build arguments; everything shared is documented here.
 
 ### Alpine
 
 Based on the official `php:*-fpm-alpine` images. Tags: `[php version]-laravel-alpine[alpine version]`.
 
-| Folder                                         | Base                 | Published by   |
-|------------------------------------------------|----------------------|----------------|
-| [8.5](./8.5/README.md)                         | `php:8.5-fpm-alpine` | GitHub Actions |
-| [8.4](./8.4/README.md)                         | `php:8.4-fpm-alpine` | GitHub Actions |
-| [8.3](./8.3/README.md)                         | `php:8.3-fpm-alpine` | manually       |
-| [8.2](./8.2/README.md), [7.4](./7.4/README.md) | `php:*-fpm-alpine`   | legacy, no longer updated (self-contained READMEs) |
+| Folder                 | Base                 | Published by   |
+|------------------------|----------------------|----------------|
+| [8.5](./8.5/README.md) | `php:8.5-fpm-alpine` | GitHub Actions |
+| [8.4](./8.4/README.md) | `php:8.4-fpm-alpine` | GitHub Actions |
 
 ### Debian
 
@@ -35,6 +33,18 @@ PHP is compiled from source on `debian:*-slim` (based on the official docker-lib
 | [debian/8.5](./debian/8.5/README.md) | `debian:trixie-slim` | GitHub Actions |
 
 A working sample application (Laravel + Vue starter kit, scheduler + horizon test jobs) lives in [example-app](./example-app/README.md).
+
+### Deprecated
+
+These images are no longer updated, as they are not used in production: they get no PHP, base image or package updates,
+security fixes included. Their published tags stay on [Docker Hub](https://hub.docker.com/r/stsdockerhub/php/tags); use 8.4 or 8.5 instead.
+Their folders were removed from `master`; each one's source and README are kept at its last tag.
+
+| PHP | Last tag                    | Source                                                                                |
+|-----|-----------------------------|---------------------------------------------------------------------------------------|
+| 8.3 | `8.3.32-laravel-alpine3.24` | [8.3](https://github.com/tgivslife/laravel-alpine/tree/8.3.32-laravel-alpine3.24/8.3) |
+| 8.2 | `8.2.15-laravel-alpine3.18` | [8.2](https://github.com/tgivslife/laravel-alpine/tree/8.2.15-laravel-alpine3.18/8.2) |
+| 7.4 | `7.4.33-laravel-alpine3.16` | [7.4](https://github.com/tgivslife/laravel-alpine/tree/7.4.33-laravel-alpine3.16/7.4) |
 
 ## What's included
 
@@ -90,7 +100,7 @@ Version arguments (`PHP_VERSION`, `ALPINE_VERSION`, ...) are listed in each imag
 
 ## Environment variables
 
-Set at runtime with `--env` (_docker run --env VAR1=value1_). The defaults below apply to all maintained images (8.3, 8.4, 8.5, debian/8.5).
+Set at runtime with `--env` (_docker run --env VAR1=value1_). The defaults below apply to every image (8.4, 8.5, debian/8.5).
 
 #### OS
 
@@ -192,20 +202,6 @@ PHP update keeps the current tag: commit the `ARG` change to `master`, then run 
 Each image is labelled with its tag, git commit, commit date and source repository: `docker inspect -f '{{json .Config.Labels}}' stsdockerhub/php:<tag>`.
 
 The workflows need the repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` (an access token with write access to `stsdockerhub/php`).
-
-### Manually (other images)
-
-The release commit bumps the version `ARG`s in the image `Dockerfile` and the package versions in the image README.
-
-1. Sign in with `docker login --username=tgivslife`
-2. Build and push both variants for both architectures, e.g. for `8.3`:
-
-   ```
-   docker buildx build --platform linux/amd64,linux/arm64 --push -t stsdockerhub/php:<tag> ./8.3
-   docker buildx build --platform linux/amd64,linux/arm64 --push -t stsdockerhub/php:<tag>-build --build-arg INCLUDE_BUILD_TOOLS=true ./8.3
-   ```
-
-3. Tag the release commit with `<tag>` and push the tag to remote
 
 ## Example deploy app
 
