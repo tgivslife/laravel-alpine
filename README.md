@@ -51,7 +51,7 @@ Their folders were removed from `master`; each one's source and README are kept 
 ### Default packages
 
 - [PHP-FPM](https://www.php.net/manual/en/install.fpm.php)
-- [Nginx](https://www.nginx.com/)
+- [Nginx](https://nginx.org/), from the nginx.org stable repository
 - [Supervisor](http://supervisord.org)
 
 The processes (php-fpm, nginx, scheduler, horizon) are started and managed by supervisor.
@@ -196,8 +196,8 @@ To republish a released version (this also refreshes the versions in its GitHub 
 - re-run the tag's workflow run from the Actions tab, e.g. to pick up base image security patches
 - or run the workflow manually on `master`, which publishes `master` under the current tag, e.g. after a config fix
 
-The `debian/8.5` tag holds only the PHP version and the Debian codename, so a newer Debian snapshot, nginx, NodeJs or Npm without a
-PHP update keeps the current tag: commit the `ARG` change to `master`, then run the workflow manually to republish.
+A tag holds only the PHP version and the Alpine version or Debian codename, so an nginx update without a PHP update keeps the current tag,
+as does a newer Debian snapshot, NodeJs or Npm for `debian/8.5`: commit the `ARG` change to `master`, then run the workflow manually to republish.
 
 Each image is labelled with its tag, git commit, commit date and source repository: `docker inspect -f '{{json .Config.Labels}}' stsdockerhub/php:<tag>`.
 

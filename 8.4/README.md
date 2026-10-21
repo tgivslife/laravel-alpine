@@ -1,6 +1,6 @@
 # 8.4
 
-Alpine image based on the official `php:8.4-fpm-alpine` image. Released by [GitHub Actions](../README.md#by-github-actions).
+Alpine image based on the official `php:8.4-fpm-alpine` image, with nginx from the nginx.org stable repository. Released by [GitHub Actions](../README.md#by-github-actions).
 
 How to build, configure (environment variables), publish and deploy is documented in the [main README](../README.md).
 
@@ -72,6 +72,7 @@ Version arguments, with their defaults set at the top of the [Dockerfile](./Dock
 
 - `ALPINE_VERSION` - Alpine version of the base image
 - `PHP_VERSION` - PHP version of the base image
+- `NGINX_VERSION` - version of the `nginx` package from the nginx.org stable repository (e.g. `1.30.6-r1`)
 - `COMPOSER_VERSION` - Composer version installed in the `-build` image
 
 Plus the [common build arguments](../README.md#build-image) (`INCLUDE_BUILD_TOOLS`, `REGISTRY`).

@@ -1,5 +1,6 @@
 ARG ALPINE_VERSION=3.24
 ARG PHP_VERSION=8.5.12
+ARG NGINX_VERSION=1.30.6-r1
 ARG COMPOSER_VERSION=2.10.3
 ARG REGISTRY=docker.io
 ARG INCLUDE_BUILD_TOOLS=false
@@ -46,8 +47,6 @@ RUN apk add --no-cache tzdata \
       icu-libs \
       libzip \
       supervisor \
-      nginx \
-    && addgroup nginx www-data \
     && apk add --no-cache --virtual .build-deps \
       zlib-dev \
       libjpeg-turbo-dev \
@@ -85,7 +84,22 @@ RUN apk add --no-cache tzdata \
     && docker-php-source delete \
     && apk del .build-deps
 
-# Declared here, not after FROM, so the -build variant reuses the extension layer above from cache.
+# Declared here, not after FROM, so an nginx update reuses the extension layer above from cache.
+ARG NGINX_VERSION
+
+# nginx from the nginx.org stable repository, which gets security releases sooner than Alpine's own package. Its signing
+# key must match the checksum pinned by the official nginx image. The package adds the nginx user to www-data, so the
+# workers can use the php-fpm socket; its default vhost goes, as conf.d is included in the main context here.
+RUN curl -fsSL -o /tmp/nginx_signing.rsa.pub https://nginx.org/keys/nginx_signing.rsa.pub \
+    && echo "e09fa32f0a0eab2b879ccbbc4d0e4fb9751486eedda75e35fac65802cc9faa266425edf83e261137a2f4d16281ce2c1a5f4502930fe75154723da014214f0655 */tmp/nginx_signing.rsa.pub" | sha512sum -c - \
+    && mv /tmp/nginx_signing.rsa.pub /etc/apk/keys/ \
+    && apk add --no-cache -X "https://nginx.org/packages/alpine/v$(grep -oE '^[0-9]+\.[0-9]+' /etc/alpine-release)/main" \
+      nginx="${NGINX_VERSION}" \
+    && id -nG nginx | grep -qw www-data \
+    && rm -f /etc/nginx/conf.d/default.conf \
+    && nginx -v
+
+# Declared here, not after FROM, so the -build variant reuses the layers above from cache.
 ARG INCLUDE_BUILD_TOOLS
 ARG COMPOSER_VERSION
 

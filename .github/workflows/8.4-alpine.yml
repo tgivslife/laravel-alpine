@@ -14,8 +14,11 @@
 # is not on a release commit, or whose commit changes more than the version ARGs. The master run skips the release
 # commit: its tag's run builds it.
 #
+# The tag holds only the PHP and Alpine versions, so an nginx update without a PHP update keeps the current tag: commit
+# the ARG change to master, then run the workflow manually to republish.
+#
 # To republish a released version: re-run its tag's workflow run (e.g. to pick up base image security patches), or run
-# the workflow manually on master to publish master under the current tag (e.g. after a config fix).
+# the workflow manually on master to publish master under the current tag (e.g. after a config fix or an nginx update).
 #
 # Each architecture builds on its own native runner and is pushed by digest (no tag); the publish job combines the two
 # digests under the plain tags, so no per-architecture tags are created.
@@ -96,7 +99,7 @@ jobs:
               exit 1
             fi
             lines=$(git diff -U0 HEAD^ HEAD -- "$CONTEXT/Dockerfile" | grep -vE '^(\+\+\+|---) ' | grep -E '^[-+]' \
-              | grep -vE '^[-+]ARG (ALPINE|PHP|COMPOSER)_VERSION=' || true)
+              | grep -vE '^[-+]ARG (ALPINE|PHP|NGINX|COMPOSER)_VERSION=' || true)
             if [ -n "$lines" ]; then
               echo "::error::The release commit changes more than the version ARGs in $CONTEXT/Dockerfile. Commit other changes before the release."
               echo "$lines"
