@@ -26,6 +26,11 @@ Route::get('test-job', function () {
     return response()->json(['status' => 'TestJob dispatched']);
 })->name('test-job');
 
+// nginx header test: the app's own X-Frame-Options replaces nginx's SAMEORIGIN default instead of being sent next to it
+Route::get('test-deny', function () {
+    return response()->json(['x-frame-options' => 'DENY'])->header('X-Frame-Options', 'DENY');
+})->name('test-deny');
+
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
