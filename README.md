@@ -31,6 +31,7 @@ PHP is compiled from source on `debian:*-slim` (based on the official docker-lib
 | Folder                               | Base                 | Published by   |
 |--------------------------------------|----------------------|----------------|
 | [debian/8.5](./debian/8.5/README.md) | `debian:trixie-slim` | GitHub Actions |
+| [debian/8.4](./debian/8.4/README.md) | `debian:trixie-slim` | GitHub Actions |
 
 A working sample application (Laravel + Vue starter kit, scheduler + horizon test jobs) lives in [example-app](./example-app/README.md).
 
@@ -100,7 +101,7 @@ Version arguments (`PHP_VERSION`, `ALPINE_VERSION`, ...) are listed in each imag
 
 ## Environment variables
 
-Set at runtime with `--env` (_docker run --env VAR1=value1_). The defaults below apply to every image (8.4, 8.5, debian/8.5).
+Set at runtime with `--env` (_docker run --env VAR1=value1_). The defaults below apply to every image (8.4, 8.5, debian/8.4, debian/8.5).
 
 #### OS
 
@@ -173,9 +174,10 @@ Each image has its own workflow, which reads the versions from that image's `Doc
 | 8.5        | [8.5/Dockerfile](./8.5/Dockerfile)               | [8.5-alpine.yml](./.github/workflows/8.5-alpine.yml)   | `8.5.*-laravel-alpine*`      |
 | debian/8.5 | [debian/8.5/Dockerfile](./debian/8.5/Dockerfile) | [8.5-debian.yml](./.github/workflows/8.5-debian.yml)   | `8.5.*-laravel-trixie`       |
 | 8.4        | [8.4/Dockerfile](./8.4/Dockerfile)               | [8.4-alpine.yml](./.github/workflows/8.4-alpine.yml)   | `8.4.*-laravel-alpine*`      |
+| debian/8.4 | [debian/8.4/Dockerfile](./debian/8.4/Dockerfile) | [8.4-debian.yml](./.github/workflows/8.4-debian.yml)   | `8.4.*-laravel-trixie`       |
 
 The release commit changes only the version `ARG` lines at the top of the image `Dockerfile`: for a PHP update, just `PHP_VERSION`
-(plus `PHP_SHA256` for `debian/8.5`, which compiles PHP from source). For example:
+(plus `PHP_SHA256` for the debian images, which compile PHP from source). For example:
 
 ```
 git commit -am "build(release): 8.5.12-laravel-alpine3.24" -m "- PHP 8.5.12"
@@ -197,7 +199,7 @@ To republish a released version (this also refreshes the versions in its GitHub 
 - or run the workflow manually on `master`, which publishes `master` under the current tag, e.g. after a config fix
 
 A tag holds only the PHP version and the Alpine version or Debian codename, so an nginx update without a PHP update keeps the current tag,
-as does a newer Debian snapshot, NodeJs or Npm for `debian/8.5`: commit the `ARG` change to `master`, then run the workflow manually to republish.
+as does a newer Debian snapshot, NodeJs or Npm for the debian images: commit the `ARG` change to `master`, then run the workflow manually to republish.
 
 Each image is labelled with its tag, git commit, commit date and source repository: `docker inspect -f '{{json .Config.Labels}}' stsdockerhub/php:<tag>`.
 
